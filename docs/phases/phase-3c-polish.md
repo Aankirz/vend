@@ -22,3 +22,6 @@ You are a builder on Vend (deadline 06:00 IST; finish and push by **04:45 IST**)
 
 ## OWNER NEEDED
 Per `docs/phases/CONTRACT.md`.
+
+## Add-on (coordinator): social link preview
+When the owner posts the live URL on X/LinkedIn, it must unfurl into a card. Add to both pages: `<meta property="og:title|og:description|og:image|og:url">` and `twitter:card=summary_large_image`, with `og:image` = absolute URL `https://production-vend-gateway.tyzo.nodeops.app/og.png`. Make `public/og.png` (1200×630) by rendering a small HTML card in Vend's style (headline "Make your agent tool pay for itself.", the 402 → pay → 200 terminal motif, "Stripe Projects × CreateOS") with headless Chrome — no external image service. Keep it under 300 KB.
