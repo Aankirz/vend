@@ -38,6 +38,8 @@
   /* Ink figure palette (spot colours, flat fills) */
   --ink-line: oklch(18% 0.02 275);
   --ink-paper: #ffffff;
+  --ink-solid: oklch(18% 0.02 275);
+  --ink-on-solid: #ffffff;
   --ink-plate: oklch(97% 0.006 270);
   --ink-machine: oklch(60% 0.2 278);
   --ink-machine-side: oklch(46% 0.18 278);
@@ -117,6 +119,7 @@
     --color-graphite-rule: oklch(24% 0.012 270);
     --ink-line: oklch(92% 0.01 270);
     --ink-paper: oklch(22% 0.012 270);
+    --ink-solid: oklch(9% 0.006 270);
     --ink-plate: oklch(17% 0.01 270);
     --ink-machine: oklch(50% 0.17 278);
     --ink-machine-side: oklch(38% 0.14 278);
@@ -208,12 +211,12 @@ button, .btn { user-select: none; -webkit-user-select: none; }
 .vm .plate { fill: var(--ink-plate); stroke-width: 1; stroke-dasharray: 2 5; }
 .vm .shadow { fill: var(--ink-line); opacity: 0.08; stroke: none; }
 .vm .m-l { fill: var(--ink-machine); } .vm .m-r { fill: var(--ink-machine-side); } .vm .m-t { fill: var(--ink-machine-top); }
-.vm .cap-l, .vm .cap-r, .vm .cap-t { fill: var(--ink-line); }
+.vm .cap-l, .vm .cap-r, .vm .cap-t { fill: var(--ink-solid); }
 .vm .cube-l { fill: var(--ink-cube); } .vm .cube-r { fill: var(--ink-cube-side); } .vm .cube-t { fill: var(--ink-cube-top); }
 .vm .bot-l, .vm .bot-t { fill: var(--ink-paper); } .vm .bot-r { fill: var(--ink-plate); }
-.vm .band { fill: var(--ink-line); }
-.vm .t-brand { fill: var(--ink-paper); font: 700 12px/1 var(--font-display); letter-spacing: 0.12em; }
-.vm .t-mini { fill: var(--ink-paper); font-size: 5.5px; opacity: 0.8; }
+.vm .band { fill: var(--ink-solid); }
+.vm .t-brand { fill: var(--ink-on-solid); font: 700 12px/1 var(--font-display); letter-spacing: 0.12em; }
+.vm .t-mini { fill: var(--ink-on-solid); font-size: 5.5px; opacity: 0.8; }
 .vm .glass { fill: var(--ink-glass); }
 .vm .glare { stroke: var(--ink-paper); stroke-width: 2.5; opacity: 0.7; }
 .vm .shelf { stroke-width: 1.6; }
@@ -222,12 +225,12 @@ button, .btn { user-select: none; -webkit-user-select: none; }
 .vm .hair, .vm .hair-ink { stroke-width: 0.8; fill: none; }
 .vm .hair { opacity: 0.55; }
 .vm .t-tag { font-size: 5.6px; text-anchor: middle; fill: var(--ink-line); }
-.vm .t-402 { font: 700 8px/1 var(--font-mono); fill: var(--ink-paper); }
-.vm .slot-plate { fill: var(--ink-line); } .vm .slot { stroke: var(--ink-yellow); stroke-width: 2.4; }
+.vm .t-402 { font: 700 8px/1 var(--font-mono); fill: var(--ink-on-solid); }
+.vm .slot-plate { fill: var(--ink-solid); } .vm .slot { stroke: var(--ink-yellow); stroke-width: 2.4; }
 .vm .key { fill: var(--ink-paper); stroke-width: 0.8; }
 .vm .paper { fill: var(--ink-paper); }
 .vm .t-paid { font-size: 5px; fill: var(--color-paid); font-weight: 600; }
-.vm .tray { fill: var(--ink-line); } .vm .flap { stroke: var(--ink-machine-top); }
+.vm .tray { fill: var(--ink-solid); } .vm .flap { stroke: var(--ink-machine-top); }
 .vm .sticker { fill: var(--ink-yellow); } .vm .lock { fill: var(--ink-yellow); }
 .vm .shackle, .vm .shackle-s { fill: none; stroke-width: 2.6; }
 .vm .cube-l + g .shackle, .vm .shackle { stroke: var(--ink-yellow); }
@@ -248,7 +251,7 @@ button, .btn { user-select: none; -webkit-user-select: none; }
 .vm.is-blocked .coin { animation: coin-in 800ms var(--ease-in-out) both; }
 .vm.is-blocked .cube-l, .vm.is-blocked .cube-r { animation: alarm 900ms 800ms 2 both; }
 @keyframes coin-in { 0% { transform: none; } 55% { transform: translate(calc(var(--cx) * 0.55), calc(var(--cy) - 46px)); } 90% { transform: translate(var(--cx), var(--cy)) scale(0.9); opacity: 1; } 100% { transform: translate(var(--cx), var(--cy)) scale(0.6); opacity: 0; } }
-@keyframes flash-paid { 0%, 100% { fill: var(--ink-paper); } 10%, 70% { fill: var(--ink-yellow); } }
+@keyframes flash-paid { 0%, 100% { fill: var(--ink-on-solid); } 10%, 70% { fill: var(--ink-yellow); } }
 @keyframes drop { to { transform: translateY(126px); } }
 @keyframes print { to { transform: scaleY(1); } }
 @keyframes earn { 0% { opacity: 0; transform: translateY(8px); } 25% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }

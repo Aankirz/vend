@@ -91,3 +91,6 @@
 ## 2026-10-18 — phase 3c: vend animation + ledger fixes
 - Vended chart now drops into the tray (CSS transform no longer overrides its SVG translate; drawn above the tray).
 - Ledger split stacks seller amount over vend fee so $9,999.99 calls never clip; 401 on /sell focuses the admin field with a plain message; figure notes hidden on phones.
+
+## 2026-10-18 — phase 3c: dark machine + 409
+- Machine cap/band/tray/slot use solid-ink tokens so dark mode keeps them dark; 409 on /sell names the running job.

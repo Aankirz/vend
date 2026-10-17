@@ -197,6 +197,7 @@ form.addEventListener('submit', async (e) => {
       $('admin').focus()
       throw new Error(token ? 'That admin token was not accepted. Check it and try again.' : 'This server needs an admin token to start builds. Enter it below.')
     }
+    if (res.status === 409) throw new Error(`Another build is running (${out.jobId || 'unknown job'}). Its log is on the right; press Vend it again when it finishes.`)
     if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`)
     submitted = true
     // An early build.log for this job may already be on screen (SSE can beat the 202): keep it.
