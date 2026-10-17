@@ -59,8 +59,8 @@ export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API
     writeFile: (path, content) => sandbox.files.upload(`${WORKDIR}/${path}`, content),
     exec: (cmd) => run(`cd ${WORKDIR} && ${cmd}`),
     async startServer(cmd, port) {
-      // nohup + setsid + redirected stdio, or runCommand blocks forever (CreateOS "Expose a Service" how-to).
-      await run(`cd ${WORKDIR} && PORT=${port} nohup setsid ${cmd} >/tmp/server.log 2>&1 &`);
+      // setsid -f detaches with every fd redirected; a `cmd &` subshell keeps the exec pipe open and runCommand hangs.
+      await run(`cd ${WORKDIR} && PORT=${port} setsid -f ${cmd} >/tmp/server.log 2>&1 </dev/null`);
       await sandbox.waitForPortReady(port, { timeoutMs: 30_000 });
       return sandbox.previewUrl(port);
     },

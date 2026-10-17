@@ -32,3 +32,6 @@
 - CreateOS runner: egress locked at create (`["192.0.2.1:9"]`), reuses a running vend-* sandbox or `--reuse <id>`, auto-pause removed.
 - Example tools: optional `source_url` path; network failure raises `network blocked: ...` (HTTP errors do not).
 - LLM: retries provider errors; fix turns folded into one user message (stealth/cat-jam rejects assistant turns with 400); base64 blobs shrunk in prompts/logs; seller code untouched until a test fails.
+
+## 2026-10-18 — Packager: CreateOS server start fix
+- runner-createos startServer uses `setsid -f` with all fds redirected; the `cmd &` form held the exec pipe open and hung runCommand. Verified live: preview URL /health 200, /run returns PNG, in-sandbox curl fails after lock.
