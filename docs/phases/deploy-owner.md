@@ -81,3 +81,10 @@ Status and logs: `createos status`, `createos deployments logs -f`, `createos de
 ## The alternative
 
 Add a Claude Code permission rule that allows `createos` commands. The agent can then run steps 1–4 itself.
+
+## Done (coordinator, 03:15 IST)
+- Live: **https://production-vend-gateway.tyzo.nodeops.app** (environment `production`, id `4f945c99-cb6b-4b21-a5b1-1724ceda59e7`; project `a178e8b5-0e3e-4b51-a216-dbb7f2ad9ec2`).
+- Gotcha: `env push` fails until an environment exists, and `createos deploy` does **not** attach to it. Redeploy = `createos deploy` then
+  `createos deployments promote --project a178e8b5-0e3e-4b51-a216-dbb7f2ad9ec2 --deployment <new id from 'Live at'> --environment 4f945c99-cb6b-4b21-a5b1-1724ceda59e7`.
+- Env set: STRIPE_SECRET_KEY, AI_GATEWAY_API_KEY, CREATEOS_SANDBOX_API_KEY, VEND_ADMIN_TOKEN, VEND_PUBLIC_URL.
+- Redeploys are done by the coordinator after review passes; builders do not deploy.
