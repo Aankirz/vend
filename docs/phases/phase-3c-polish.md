@@ -48,3 +48,11 @@ Checked by coordinator: v0.5.1, **MIT**, no dependencies, ESM, works without Rea
 - We have no bundler: `npm i @lucasmarkes/hairline` (root package.json — the one shared-file exception, append only), then copy `node_modules/@lucasmarkes/hairline/dist/index.js` to `public/vendor/hairline.js` with its MIT licence header, and `import` it as an ES module from the pages. No CDN.
 - Map figures to Vend's story: **`padlock`** = Verify / network locked; **`terminal`** = the build log; **`slow`** (crates riding a belt through a gate) = the paid gateway; **`plot`** = the chart result; optionally **`hub`/`relay`** = agents calling tools. Caption them "Fig. 01…" in the Colorfigures convention.
 - The hero centrepiece stays **our own hand-drawn vending machine** (Add-on 4); hairline figures carry the step section and supporting moments. Lazy-init figures when visible (IntersectionObserver), `destroy()` off-screen, `play:false` under reduced motion. Credit hairline in the footer.
+
+## Add-on 6 (coordinator) — design the moments, not the style (owner reference: x.com/pitus_/status/2110059026818212244)
+Answer these user moments explicitly in the design; list how you answered each in the hand-off:
+1. **A seller waits ~60–90 s while the sandbox builds.** What do they see so they don't leave? (The vending machine "assembling" step by step in sync with the real log events; elapsed time; what's happening right now in one plain sentence; the failing test shown as a good thing — "caught a bug, fixing".)
+2. **A judge clicks "Try a paid call" and waits ~3–5 s.** Each step (402 → paying → paid pi_… → chart) must land visibly, in order, never a blank spinner.
+3. **Empty states:** no tools live yet; no calls yet on /sell; SSE disconnected (show it and retry).
+4. **Error states:** build failed after 4 attempts (say what failed, offer retry), 409 build already running (show who/what is running), 429 on try-it (countdown), admin token wrong (inline, not alert).
+5. Fix AI-default tells: uneven spacing, gratuitous gradients, everything the same size. One clear focal point per screen.
