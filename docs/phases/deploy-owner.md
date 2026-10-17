@@ -73,7 +73,7 @@ Status and logs: `createos status`, `createos deployments logs -f`, `createos de
 
 ## Unverified points (fallbacks)
 
-- **Runtime without a framework.** If `--runtime node:20` is rejected without a `--framework`, add a Dockerfile (`FROM node:20-slim`, `COPY . .`, `RUN npm install --omit=dev`, `CMD ["node","src/server.js"]`) and use `--runtime dockerfile --port 8080`.
+- **Runtime without a framework.** If `--runtime node:20` is rejected without a `--framework`, use the repo's `Dockerfile` instead: same `projects add` with `--runtime dockerfile --port 8080` (drop the install/build/run flags). The image was built and smoke-tested locally: `/healthz` OK, `/` 200, `/api/tools` answers, no `.env` in the image (`.dockerignore`).
 - **Env changes and redeploys.** It is unknown whether `env push` after a deploy triggers a redeploy. If the vars are missing at runtime, run `createos deployments retrigger`.
 - **Platform port.** The platform should set `PORT` from `--port 8080`; the server also defaults to 8080.
 - **Data does not survive redeploys.** `data/` is gitignored and not uploaded, so the deploy starts with an empty registry. Seed with `VEND_SEED_TOOL_URL` or vend a tool on `/sell` with the admin token.

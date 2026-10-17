@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules
+data
+.git
+.projects
+.createos.json

@@ -43,3 +43,6 @@
 
 ## 2026-10-18 — Deploy owner steps
 - Added docs/phases/deploy-owner.md: denied createos command + error text, exact owner deploy/verify commands, fallbacks.
+
+## 2026-10-18 — Dockerfile deploy fallback
+- Added Dockerfile + .dockerignore (node:20-slim, npm ci --omit=dev, excludes .env/data); smoke-tested locally.
