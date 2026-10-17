@@ -21,7 +21,7 @@ You are a builder on Vend (deadline 06:00 IST; this video must be rendered by **
 6. `video/README.md`: how to re-render, credits (snapcn, Remotion), music is generated in-repo.
 
 ## Not in this phase
-Any change outside `video/`; voice-over of the owner (he records the on-camera video separately); paid music/AI services; uploading anywhere.
+Any change outside `video/`; voice-over of the owner (they record the on-camera video separately); paid music/AI services; uploading anywhere.
 
 ## Done when
 1. `video/out/vend-launch.mp4` exists, 35–45 s, plays with audio (`ffprobe` shows both streams), under 50 MB.
