@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vend a tool — Vend</title>
+  <title>Vend a tool · Vend</title>
+  <meta name="description" content="Paste a Python tool, watch it get verified in a sandbox, and see agent payments land.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -14,32 +15,33 @@
     <div class="wrap">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">V</span>Vend</a>
       <nav class="site-nav" aria-label="Main navigation">
-        <a href="/#tools">Live tools</a>
-        <a href="/sell" aria-current="page">Sell</a>
+        <a class="nav-link" href="/#tools">Live tools</a>
+        <a class="nav-link" href="/sell" aria-current="page">Sell</a>
       </nav>
     </div>
   </header>
 
-  <main class="wrap sell-grid">
-    <section class="panel" aria-labelledby="form-heading">
+  <main class="wrap bench">
+    <section class="panel form-panel" aria-labelledby="form-heading">
       <div class="panel-head">
-        <h2 id="form-heading">Vend a tool</h2>
-        <button class="btn btn-sm" type="button" id="load-example">Load example</button>
+        <h2 id="form-heading">1 · Paste a tool</h2>
+        <button class="btn btn-sm btn-ghost" type="button" id="load-example">Load example</button>
       </div>
       <form class="panel-body" id="sell-form" novalidate>
-        <div class="field">
+        <div class="field field-code">
           <label for="code">Python code</label>
           <textarea class="code" id="code" name="code" spellcheck="false" required placeholder="def my_tool(...):&#10;    ..."></textarea>
-          <span class="hint">Up to 20 KB. Vend writes the server and the tests for you.</span>
+          <span class="hint">Up to 20 KB. Vend writes the server and the tests.</span>
         </div>
         <div class="row-2">
           <div class="field">
             <label for="name">Name</label>
-            <input id="name" name="name" required pattern="[a-z0-9][a-z0-9\-]{1,39}" placeholder="chart" autocomplete="off">
+            <input id="name" name="name" required pattern="[a-z0-9][a-z0-9\-]{1,39}" placeholder="chart" autocomplete="off" aria-describedby="name-hint">
+            <span class="hint" id="name-hint">lowercase, a-z 0-9 -</span>
           </div>
           <div class="field">
-            <label for="price">Price (USD)</label>
-            <input id="price" name="priceUsd" type="number" min="0.50" step="0.01" value="0.50" required>
+            <label for="price">Price, USD</label>
+            <input id="price" name="priceUsd" type="number" min="0.50" step="0.01" value="0.50" required inputmode="decimal">
           </div>
         </div>
         <div class="field">
@@ -49,174 +51,49 @@
         <div class="field">
           <label for="admin">Admin token</label>
           <input id="admin" type="password" autocomplete="off" placeholder="only needed on the public deploy">
-          <span class="hint">Kept in this tab only (sessionStorage).</span>
+          <span class="hint">Kept in this tab only.</span>
         </div>
         <div class="form-foot">
           <span class="form-msg" id="form-msg" role="status" aria-live="polite"></span>
-          <button class="btn btn-primary" type="submit" id="submit">Vend it</button>
+          <button class="btn btn-primary vend-btn" type="submit" id="submit" data-state="idle"><span class="vend-label">Vend it</span></button>
         </div>
       </form>
     </section>
 
-    <div style="display:grid;gap:20px">
-      <section class="panel" aria-labelledby="log-heading">
-        <div class="panel-head">
-          <h2 id="log-heading">Build log</h2>
-          <span class="status-pill" id="build-status">idle</span>
-        </div>
-        <pre class="log" id="log" aria-live="polite"><span class="log-line"><span class="t">--:--</span>Waiting for a build…</span></pre>
-      </section>
+    <section class="panel log-panel" aria-labelledby="log-heading">
+      <div class="panel-head">
+        <h2 id="log-heading">2 · Verified in a sandbox</h2>
+        <span class="status-pill" id="build-status">idle</span>
+      </div>
+      <ol class="steps" id="steps" aria-label="Build progress"></ol>
+      <pre class="log" id="log" aria-live="polite"><span class="log-line muted"><span class="t">--:--:--</span>Waiting for a build.</span></pre>
+    </section>
 
-      <section class="panel" aria-labelledby="earn-heading">
-        <div class="panel-head">
-          <h2 id="earn-heading">Earnings &amp; trust</h2>
-          <span class="status-pill">90 / 10 split</span>
-        </div>
-        <div class="panel-body">
-          <div class="mini-stats">
-            <div><span>Seller earned</span><strong id="s-seller">$0.00</strong></div>
-            <div><span>Vend fee</span><strong id="s-vend">$0.00</strong></div>
-            <div><span>Refunded</span><strong id="s-refunded">$0.00</strong></div>
+    <section class="panel earn-panel" aria-labelledby="earn-heading">
+      <div class="panel-head">
+        <h2 id="earn-heading">3 · Agents pay per call</h2>
+        <span class="status-pill">you keep 90%</span>
+      </div>
+      <div class="panel-body">
+        <div class="earn-hero" id="earn-hero">
+          <span class="label">Seller earned</span>
+          <strong id="s-seller">$0.00</strong>
+          <div class="earn-sub">
+            <span>Vend fee <b id="s-vend">$0.00</b></span>
+            <span class="refund">Refunded <b id="s-refunded">$0.00</b></span>
+            <span class="blocked">Blocked <b id="s-blocked">0</b></span>
           </div>
+        </div>
+        <div class="ledger-wrap">
           <table class="ledger">
-            <thead><tr><th scope="col">Call</th><th scope="col">Tool</th><th scope="col" class="num">Seller / Vend</th></tr></thead>
-            <tbody id="calls"><tr id="no-calls"><td colspan="3" style="color:var(--faint)">No calls yet. Run a buyer snippet from the home page.</td></tr></tbody>
+            <thead><tr><th scope="col">Call</th><th scope="col" class="num">You / Vend</th></tr></thead>
+            <tbody id="calls"><tr class="empty-row" id="no-calls"><td colspan="2">No calls yet. Run a buyer snippet from <a href="/#tools">Live tools</a>.</td></tr></tbody>
           </table>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   </main>
 
-  <script type="module">
-    import { el, getJson, onEvents, setCounter, usd } from '/app.js'
-
-    const $ = (id) => document.getElementById(id)
-    const form = $('sell-form'), log = $('log'), status = $('build-status'), msg = $('form-msg')
-    const ADMIN_KEY = 'vend-admin-token'
-    let currentJob = null
-    let submitted = false
-
-    try { $('admin').value = sessionStorage.getItem(ADMIN_KEY) || '' } catch {}
-
-    $('load-example').addEventListener('click', async () => {
-      const res = await fetch('/api/example')
-      $('code').value = await res.text()
-      $('name').value ||= 'chart'
-      $('description').value ||= 'Render a bar or line chart and return it as a base64 PNG'
-    })
-
-    function setStatus(text, kind = '') {
-      status.textContent = text
-      status.className = `status-pill ${kind}`
-    }
-
-    function classify(line) {
-      if (/^✅|passed/.test(line)) return 'ok'
-      if (/failed|giving up|error/i.test(line)) return 'fail'
-      if (/network locked/.test(line)) return 'lock'
-      if (/^live at|is live/.test(line)) return 'live'
-      return ''
-    }
-
-    function logLine(text, kind = classify(text), ts = new Date().toISOString()) {
-      const time = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      log.append(el('span', { class: `log-line ${kind}` }, el('span', { class: 't' }, time), text))
-      log.scrollTop = log.scrollHeight
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const token = $('admin').value.trim()
-      try { sessionStorage.setItem(ADMIN_KEY, token) } catch {}
-      const body = { name: $('name').value.trim(), description: $('description').value.trim(), code: $('code').value, priceUsd: Number($('price').value) }
-      $('submit').disabled = true
-      msg.className = 'form-msg'
-      msg.textContent = 'Submitting…'
-      try {
-        const res = await fetch('/api/tools', { method: 'POST', headers: { 'content-type': 'application/json', ...(token && { 'x-vend-admin': token }) }, body: JSON.stringify(body) })
-        const out = await res.json()
-        if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`)
-        currentJob = out.jobId
-        submitted = true
-        log.replaceChildren()
-        logLine(`build ${out.jobId} queued for "${body.name}"`, '')
-        setStatus('building', 'running')
-        msg.textContent = 'Building — watch the log.'
-      } catch (err) {
-        msg.className = 'form-msg error'
-        msg.textContent = err.message
-        $('submit').disabled = false
-      }
-    })
-
-    function onBuild(event) {
-      const { jobId, line, ok, path, error, attempts } = event.data || {}
-      // Follow the latest build until this tab submits its own, then follow only that one.
-      if (jobId !== currentJob) {
-        if (submitted) return
-        currentJob = jobId
-        log.replaceChildren()
-      }
-      if (event.type === 'build.log') {
-        logLine(line, undefined, event.ts)
-        setStatus('building', 'running')
-        return
-      }
-      $('submit').disabled = false
-      if (ok) {
-        const url = `${location.origin}${path}`
-        logLine(`✅ verified in ${attempts} attempt(s) — live at ${url}`, 'live', event.ts)
-        setStatus('live', 'ok')
-        msg.textContent = 'Live. Agents can buy it now.'
-      } else {
-        logLine(`build failed: ${error || 'unknown error'}`, 'fail', event.ts)
-        setStatus('failed', 'fail')
-        msg.textContent = ''
-      }
-    }
-
-    // One ledger row per PaymentIntent, updated as events arrive.
-    const rows = new Map()
-    const BADGES = { 'call.paid': ['paid', '✅ paid'], 'call.ok': ['paid', '✅ paid'], 'call.failed': ['failed', '✖ failed'], 'call.blocked': ['blocked', '⛔ BLOCKED'], 'call.refunded': ['refunded', '↩ refunded'], 'call.refund_failed': ['blocked', '⚠ refund failed'] }
-
-    function onCall(event) {
-      const d = event.data || {}
-      const key = d.paymentIntent || `${event.ts}-${Math.random()}`
-      let row = rows.get(key)
-      if (!row) {
-        $('no-calls')?.remove()
-        row = { badge: el('span', { class: 'badge' }), split: el('td', { class: 'num' }, '—'), sub: el('span', { class: 'sub' }, '') }
-        const tr = el('tr', {}, el('td', {}, row.badge, row.sub), el('td', { class: 'mono' }, d.toolId || '?'), row.split)
-        $('calls').prepend(tr)
-        rows.set(key, row)
-      }
-      const [kind, label] = BADGES[event.type]
-      row.badge.className = `badge ${kind}`
-      row.badge.textContent = label
-      row.sub.textContent = d.error ? String(d.error).slice(0, 80) : new Date(event.ts).toLocaleTimeString()
-      if (event.type === 'call.ok' && d.ledger) row.split.textContent = `${usd(d.ledger.sellerCents)} / ${usd(d.ledger.vendCents)}`
-      if (event.type === 'call.refunded') row.split.textContent = `−$${Number(d.amountUsd || 0).toFixed(2)}`
-    }
-
-    async function refreshStats() {
-      try {
-        const s = await getJson('/api/stats')
-        setCounter($('s-seller'), usd(s.sellerCents))
-        setCounter($('s-vend'), usd(s.vendCents))
-        setCounter($('s-refunded'), usd(s.refundedCents))
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
-    refreshStats()
-    onEvents((event) => {
-      if (event.type.startsWith('build.')) return onBuild(event)
-      if (BADGES[event.type]) {
-        onCall(event)
-        refreshStats()
-      }
-    })
-  </script>
+  <script type="module" src="/sell.js"></script>
 </body>
 </html>
