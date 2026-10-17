@@ -154,3 +154,6 @@ vite.config.ts.timestamp-*
 .env
 .env.*
 !.env.example
+
+# Vend runtime data (tools registry, events log)
+data/
