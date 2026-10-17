@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "project": {
+    "catalog": "prod",
+    "merchantId": "acct_1URcTiEeATVahPmE",
+    "merchantDisplayName": null,
+    "projectId": "project_61Vb256gGzaqsrt9O16Vb0R4PfSQ9iUMDruP0VJtICjw",
+    "projectName": "vend",
+    "initializedAt": "2026-10-17T20:22:36.950Z"
+  },
+  "providers": {},
+  "resources": {}
+}
