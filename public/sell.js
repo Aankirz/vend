@@ -192,6 +192,11 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/tools', { method: 'POST', headers: { 'content-type': 'application/json', ...(token && { 'x-vend-admin': token }) }, body: JSON.stringify(body) })
     const out = await res.json()
+    if (res.status === 401) {
+      $('admin').setAttribute('aria-invalid', 'true')
+      $('admin').focus()
+      throw new Error(token ? 'That admin token was not accepted. Check it and try again.' : 'This server needs an admin token to start builds. Enter it below.')
+    }
     if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`)
     submitted = true
     // An early build.log for this job may already be on screen (SSE can beat the 202): keep it.
@@ -275,7 +280,7 @@ function onCall(event, isLive) {
   // Keep the first error (e.g. the blocked reason) visible after the refund event lands.
   if (d.error) row.sub.textContent = String(d.error).slice(0, 80)
   else if (!row.sub.textContent) row.sub.textContent = new Date(event.ts).toLocaleTimeString()
-  if (event.type === 'call.ok' && d.ledger) row.split.textContent = `+${usd(d.ledger.sellerCents)} / ${usd(d.ledger.vendCents)}`
+  if (event.type === 'call.ok' && d.ledger) row.split.replaceChildren(`+${usd(d.ledger.sellerCents)}`, el('span', { class: 'sub' }, `vend ${usd(d.ledger.vendCents)}`))
   if (event.type === 'call.refunded') row.split.textContent = `−${usd(Math.round(Number(d.amountUsd || 0) * 100))}`
   if (event.type === 'call.ok' && isLive && d.ledger) floatDelta(d.ledger.sellerCents)
   if (event.type === 'call.blocked' && isLive) pop(row.badge)

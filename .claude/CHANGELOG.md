@@ -87,3 +87,7 @@
 ## 2026-10-18 — phase 3c: design the waits
 - /sell: one plain sentence for what the build is doing right now (mapped from real log lines), elapsed clock in the status pill, failing test framed as "caught a bug", failure message says what failed; live-feed loss shown inline.
 - /: snippets folded behind "Call it from a terminal or agent" so Try is the focal action; "What the agent sees" row; hero no longer jumps when the try panel opens; ledger split only wraps on phones.
+
+## 2026-10-18 — phase 3c: vend animation + ledger fixes
+- Vended chart now drops into the tray (CSS transform no longer overrides its SVG translate; drawn above the tray).
+- Ledger split stacks seller amount over vend fee so $9,999.99 calls never clip; 401 on /sell focuses the admin field with a plain message; figure notes hidden on phones.
