@@ -77,7 +77,7 @@ export function toolCard(tool) {
       el('p', { class: 'tool-desc' }, tool.description || 'No description.'),
       el('div', { class: 'tool-try' }, tryBtn('Try a paid call', false), tryBtn('Try a malicious call', true)),
     ),
-    el('div', { class: 'snippets' }, panel, snippets),
+    el('div', { class: 'snippets' }, panel, el('details', { class: 'snippet-box' }, el('summary', {}, 'Call it from a terminal or agent'), snippets)),
   )
 }
 

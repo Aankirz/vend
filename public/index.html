@@ -106,6 +106,8 @@
           <li class="fig-card"><div class="hl" data-fig="slow" data-label="Crates riding a belt through a gate: the paid gateway"></div><p class="fig-cap"><span class="fig-no">Fig. 03</span> <b>Gate.</b> Unpaid calls get 402. Paid calls pass through on a Stripe payment.</p></li>
           <li class="fig-card"><div class="hl" data-fig="plot" data-label="A bar chart: the result the agent bought"></div><p class="fig-cap"><span class="fig-no">Fig. 04</span> <b>Get paid.</b> The agent gets its result, you get 90%. Failures refund the buyer.</p></li>
         </ol>
+        <div class="agent-view">
+          <div><h3>What the agent sees.</h3><p>No checkout page and no API key to hand out. A plain HTTP call gets a price, pays it with a Stripe token, and gets the result. If the tool fails, the payment is refunded.</p></div>
         <figure class="exchange" aria-label="What an agent sees when it calls a Vend tool">
           <figcaption><span>agent ⇄ vend</span><span>a $0.50 tool</span></figcaption>
           <ol>
@@ -116,6 +118,7 @@
             <li><span class="who">$</span><span><span class="ok">seller +$0.45</span> <span class="dim">· vend +$0.05</span></span></li>
           </ol>
         </figure>
+        </div>
       </div>
     </section>
 

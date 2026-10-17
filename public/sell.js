@@ -96,6 +96,47 @@ function stepFromLine(line) {
   if (/^giving up|failed:|^bad LLM reply/.test(line) && activeStep) mark(activeStep, 'fail')
 }
 
+/* ───────── The wait: one plain sentence for what is happening right now, plus elapsed time ───────── */
+const NOW = [
+  [/^creating sandbox/, 'Starting a fresh CreateOS sandbox for your tool.'],
+  [/^writing wrapper/, 'An agent is writing a web server and tests around your code.'],
+  [/^installing/, 'Installing your dependencies inside the sandbox.'],
+  [/^network locked/, 'Dependencies are in. The sandbox network is now locked.'],
+  [/^running \d+ tests/, 'Running the tests in the sandbox.'],
+  [/^test failed/, 'Caught a bug before any buyer did. The agent is fixing it.', 'is-caught'],
+  [/^fixing/, 'Rewriting the wrapper to fix the failing test.', 'is-caught'],
+  [/^✅ .*passed/, 'All tests green.'],
+  [/^starting server/, 'Starting your tool’s server.'],
+  [/^live ✅/, 'Live. Agents can buy it now.', 'is-live'],
+  [/^giving up/, 'The tests still fail after every retry. The last error is in the log above.', 'is-fail'],
+]
+function setNow(text, kind = '') {
+  $('build-now').className = `build-now ${kind}`
+  $('build-now').textContent = text
+}
+function nowFromLine(line) {
+  const hit = NOW.find(([re]) => re.test(line))
+  if (hit) setNow(hit[1], hit[2])
+}
+
+let clockStart = 0, clockTimer = null
+const SECOND_MS = 1000
+const mmss = (ms) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / SECOND_MS) % 60).padStart(2, '0')}`
+function startClock(ts) {
+  if (clockTimer) return
+  clockStart = Math.min(Date.parse(ts) || Date.now(), Date.now())
+  const tick = () => setStatus(`building · ${mmss(Date.now() - clockStart)}`, 'running')
+  tick()
+  clockTimer = setInterval(tick, SECOND_MS)
+}
+function stopClock() {
+  clearInterval(clockTimer)
+  clockTimer = null
+  const took = clockStart ? mmss(Date.now() - clockStart) : ''
+  clockStart = 0
+  return took
+}
+
 /* ───────── Build log ───────── */
 function setStatus(text, kind = '') {
   status.textContent = text
@@ -105,6 +146,7 @@ function setStatus(text, kind = '') {
 function classify(line) {
   if (/^live ✅|live at/.test(line)) return 'live'
   if (/✅|passed/.test(line)) return 'ok'
+  if (/^test failed/.test(line)) return 'caught'
   if (/failed|giving up|error/i.test(line)) return 'fail'
   if (/network locked/.test(line)) return 'lock'
   if (/queued|^fixing|^writing|^creating|^installing|^starting/.test(line)) return 'muted'
@@ -156,7 +198,8 @@ form.addEventListener('submit', async (e) => {
     if (currentJob !== out.jobId) startJob(out.jobId)
     logLine(`build ${out.jobId} queued for "${body.name}"`, 'muted')
     log.prepend(log.lastElementChild)
-    setStatus('building', 'running')
+    startClock(new Date().toISOString())
+    setNow('Queued. Starting a sandbox for your tool.')
     setButton('building')
     setMsg('Building. Watch the log.')
   } catch (err) {
@@ -165,7 +208,7 @@ form.addEventListener('submit', async (e) => {
   }
 })
 
-function onBuild(event) {
+function onBuild(event, isLive) {
   const { jobId, line, ok, path, error, attempts } = event.data || {}
   // Follow the latest build until this tab submits its own, then follow only that one.
   if (jobId !== currentJob) {
@@ -175,15 +218,19 @@ function onBuild(event) {
   if (event.type === 'build.log') {
     logLine(line, undefined, event.ts)
     stepFromLine(line)
-    return setStatus('building', 'running')
+    nowFromLine(line)
+    return isLive ? startClock(event.ts) : setStatus('building', 'running')
   }
+  const took = stopClock()
   if (ok) {
+    setNow(`Live${took && ` after ${took}`}. Agents can buy it now.`, 'is-live')
     logLine(`✅ verified in ${attempts} ${attempts === 1 ? 'attempt' : 'attempts'} · live at ${location.origin}${path}`, 'live', event.ts)
     mark('green', 'done')
     mark('live', 'live')
     setStatus('live', 'ok')
   } else {
     logLine(`build failed: ${error || 'unknown error'}`, 'fail', event.ts)
+    setNow(`The build failed: ${error || 'unknown error'}. Fix the code or load the example, then press Try again.`, 'is-fail')
     if (activeStep) mark(activeStep, 'fail')
     setStatus('failed', 'fail')
   }
@@ -272,10 +319,12 @@ async function refreshStats() {
 const scheduleStats = coalesce(refreshStats)
 buildSteps()
 refreshStats()
-onEvents((event, isLive) => {
-  if (event.type.startsWith('build.')) return onBuild(event)
+const source = onEvents((event, isLive) => {
+  if (event.type.startsWith('build.')) return onBuild(event, isLive)
   if (BADGES[event.type]) {
     onCall(event, isLive)
     scheduleStats()
   }
 })
+source.addEventListener('error', () => setMsg('Live feed lost. Reconnecting…', 'error'))
+source.addEventListener('open', () => { if (/^Live feed lost/.test(msg.textContent)) setMsg('Live feed back.', 'ok') })

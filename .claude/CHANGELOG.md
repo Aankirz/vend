@@ -83,3 +83,7 @@
 - Hairline figures (MIT, vendored at public/vendor/hairline.js) for Fig. 01–04, lazy-mounted via IntersectionObserver.
 - OG/Twitter card meta + public/og.png (1200×630, rendered from the same SVG).
 - break-ui fixes: grouped money/counts, capped long log lines, ledger split wraps, long totals step down a size, show-all for long tool lists, attempts pluralized.
+
+## 2026-10-18 — phase 3c: design the waits
+- /sell: one plain sentence for what the build is doing right now (mapped from real log lines), elapsed clock in the status pill, failing test framed as "caught a bug", failure message says what failed; live-feed loss shown inline.
+- /: snippets folded behind "Call it from a terminal or agent" so Try is the focal action; "What the agent sees" row; hero no longer jumps when the try panel opens; ledger split only wraps on phones.
