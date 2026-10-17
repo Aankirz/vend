@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vend — make your agent tool pay for itself</title>
+  <meta name="description" content="Paste a tool. Vend verifies it in a sandbox and turns it into a pay-per-call service any AI agent can buy with Stripe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">V</span>Vend</a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#tools" class="hide-sm">Live tools</a>
+        <a href="/openapi.json" class="hide-sm">openapi.json</a>
+        <a class="btn btn-primary btn-sm" href="/sell">Vend a tool</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap" aria-labelledby="hero-heading">
+      <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Stripe MPP · CreateOS Sandbox · test mode</span>
+      <h1 id="hero-heading">Make your agent tool <em>pay for itself.</em></h1>
+      <p class="lede">Paste a tool. About 90 seconds later it is a verified, sandboxed, pay-per-call service any AI agent can buy with Stripe. Callers pay only if it works.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/sell">Vend a tool →</a>
+        <a class="btn" href="#tools">Buy from an agent</a>
+      </div>
+    </section>
+
+    <section class="wrap" aria-label="Live totals">
+      <dl class="counters">
+        <div class="counter"><dt>Paid calls</dt><dd id="c-paid">0</dd></div>
+        <div class="counter"><dt>Earned by sellers</dt><dd id="c-seller">$0.00</dd></div>
+        <div class="counter"><dt>Refunded</dt><dd id="c-refunds">0</dd></div>
+        <div class="counter"><dt>Blocked</dt><dd id="c-blocked">0</dd></div>
+      </dl>
+    </section>
+
+    <section class="block wrap" aria-labelledby="how-heading">
+      <div class="section-head">
+        <h2 id="how-heading">How it works</h2>
+        <p>No checkout page. No API keys handed out. Just HTTP 402.</p>
+      </div>
+      <ol class="steps" role="list">
+        <li class="step"><h3>Paste your tool</h3><p>Python code, a name and a price per call. That is the whole form.</p></li>
+        <li class="step"><h3>Verified in a sandbox</h3><p>An agent wraps it in a server, writes tests, fixes what fails, then locks the network.</p></li>
+        <li class="step"><h3>Agents pay per call</h3><p>Unpaid calls get <code>402</code>. Paid calls run. Failures are refunded automatically.</p></li>
+      </ol>
+    </section>
+
+    <section class="block wrap" id="tools" aria-labelledby="tools-heading">
+      <div class="section-head">
+        <h2 id="tools-heading">Live tools</h2>
+        <p>Copy a snippet into any terminal or agent.</p>
+      </div>
+      <div class="tools" id="tool-list"><div class="empty">Loading tools…</div></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">Vend — built for CreateOS × Stripe Projects. Stripe test mode: no real money moves.</div>
+  </footer>
+
+  <script type="module">
+    import { getJson, onEvents, renderTools, setCounter, usd } from '/app.js'
+
+    const list = document.getElementById('tool-list')
+    async function refreshStats() {
+      try {
+        const s = await getJson('/api/stats')
+        setCounter(document.getElementById('c-paid'), String(s.paidCalls))
+        setCounter(document.getElementById('c-seller'), usd(s.sellerCents))
+        setCounter(document.getElementById('c-refunds'), String(s.refunds))
+        setCounter(document.getElementById('c-blocked'), String(s.blocked))
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    refreshStats()
+    renderTools(list)
+    onEvents((event) => {
+      if (event.type.startsWith('call.')) refreshStats()
+      if (event.type === 'build.done' && event.data?.ok) renderTools(list)
+    })
+  </script>
+</body>
+</html>

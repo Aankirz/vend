@@ -35,3 +35,8 @@
 
 ## 2026-10-18 — Packager: CreateOS server start fix
 - runner-createos startServer uses `setsid -f` with all fds redirected; the `cmd &` form held the exec pipe open and hung runCommand. Verified live: preview URL /health 200, /run returns PNG, in-sandbox curl fails after lock.
+
+## 2026-10-18 — Phase 3: Vend app (server, pages, README)
+- Added src/server.js: gateway mount (/t/:id, /openapi.json), /api/tools (list + admin-gated single-build submit → packageTool → registerTool), /api/events SSE (backlog from events.jsonl), /api/stats, static public/.
+- Added public/index.html, public/sell.html, public/app.js, public/styles.css (light/dark tokens, Inter + JetBrains Mono, textContent-only rendering, 375px-safe).
+- Rewrote README (Stripe Projects, MPP, CreateOS Sandbox, architecture, GTM, roadmap, limits); npm start; .env.example lists every env var; test/server.test.js.
