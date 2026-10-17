@@ -202,3 +202,10 @@ data/
 .claude/skills/slideshow
 .agents/skills/talking-head-recut/
 .claude/skills/talking-head-recut
+
+# Demo video: renders, recordings and owner clips stay local
+demo/out/*.mp4
+demo/owner/*
+!demo/owner/.gitkeep
+demo/build/
+demo/node_modules/

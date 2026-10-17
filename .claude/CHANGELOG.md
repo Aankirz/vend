@@ -94,3 +94,6 @@
 
 ## 2026-10-18 — phase 3c: dark machine + 409
 - Machine cap/band/tray/slot use solid-ink tokens so dark mode keeps them dark; 409 on /sell names the running job.
+
+## 2026-10-18 — Phase 6 demo video pipeline
+- Added demo/: Playwright recorder, terminal replay, narration EDL, ffmpeg renderer, owner-slot swap (`npm --prefix demo run final`); gitignored renders and owner clips.

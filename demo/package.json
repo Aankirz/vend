@@ -1,0 +1,14 @@
+{
+  "name": "vend-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record": "node scripts/record.js",
+    "render": "node scripts/render.js",
+    "final": "node scripts/render.js --final-only",
+    "postinstall": "node scripts/patch-playwright.cjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.56.1"
+  }
+}
