@@ -21,3 +21,9 @@
 ## 2026-10-18 — Phase 1 Amendment A: BLOCKED handling
 - Gateway emits call.blocked (instead of call.failed) when the tool reports `network blocked: ...`, then refunds via the same path; test added.
 - Documented the `npx mppx` CLI one-liner (test-helper SPT) in scripts/buyer.js.
+
+## 2026-10-18 — Phase 1 review round 1 fixes
+- Gateway: whole handler in try/catch (malformed %-encoding no longer crashes); non-string tool errors coerced; any failure after the charge goes to the refund path; event writes can't block refunds; refund failure emits call.refund_failed.
+- SSRF: upstream fetch uses redirect:'manual' (3xx = failure); registerTool requires http(s) upstreamUrl. Upstream response capped at 1 MB; oversized request bodies destroy the socket; dev server requestTimeout 10s.
+- Registry: own-property lookup (no __proto__/constructor hits), atomic tools.json writes, price must be finite whole cents >= $0.50.
+- Regression tests for each; live test-mode run evidenced in hand-off.

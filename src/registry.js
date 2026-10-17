@@ -17,9 +17,26 @@ function load() {
   }
 }
 
+// Atomic write: packager and gateway share this file, so never leave it half-written.
 function save(tools) {
   fs.mkdirSync(dataDir(), { recursive: true })
-  fs.writeFileSync(toolsFile(), JSON.stringify(tools, null, 2))
+  const tmp = `${toolsFile()}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`
+  fs.writeFileSync(tmp, JSON.stringify(tools, null, 2))
+  fs.renameSync(tmp, toolsFile())
+}
+
+function validPrice(priceUsd) {
+  const n = Number(priceUsd)
+  const cents = n * 100
+  return Number.isFinite(n) && n >= MIN_PRICE_USD && Math.abs(cents - Math.round(cents)) < 1e-9
+}
+
+function validUpstream(url) {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol)
+  } catch {
+    return false
+  }
 }
 
 function slug(name) {
@@ -29,8 +46,8 @@ function slug(name) {
 // `id` is optional; pass one to re-register (overwrite) a known tool.
 export function registerTool({ id, name, description = '', priceUsd, upstreamUrl, sandboxId = null, inputSchema = { type: 'object' } }) {
   if (!name) throw new Error('registerTool: name is required')
-  if (!upstreamUrl) throw new Error('registerTool: upstreamUrl is required')
-  if (!(Number(priceUsd) >= MIN_PRICE_USD)) throw new Error(`registerTool: priceUsd must be >= ${MIN_PRICE_USD}`)
+  if (!validUpstream(upstreamUrl)) throw new Error('registerTool: upstreamUrl must be an http(s) URL')
+  if (!validPrice(priceUsd)) throw new Error(`registerTool: priceUsd must be whole cents and >= ${MIN_PRICE_USD}`)
   const tool = {
     id: id || `${slug(name)}-${crypto.randomBytes(3).toString('hex')}`,
     name,
@@ -45,5 +62,8 @@ export function registerTool({ id, name, description = '', priceUsd, upstreamUrl
   return tool
 }
 
-export const getTool = (id) => load()[id]
+export function getTool(id) {
+  const tools = load()
+  return Object.hasOwn(tools, id) ? tools[id] : undefined
+}
 export const listTools = () => Object.values(load())

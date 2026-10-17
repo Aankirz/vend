@@ -45,8 +45,10 @@ before(async () => {
   upstream = await listen(async (req, res) => {
     for await (const _ of req);
     if (upstreamMode === 'http500') return res.writeHead(500).end('boom')
+    if (upstreamMode === 'redirect') return res.writeHead(302, { location: 'http://169.254.169.254/' }).end()
     const body = upstreamMode === 'ok' ? { ok: true, result: 'HI' }
       : upstreamMode === 'blocked' ? { ok: false, error: 'network blocked: evil.example' }
+      : upstreamMode === 'nonstring' ? { ok: false, error: { code: 42 } }
       : { ok: false, error: 'tool broke' }
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
   })
@@ -128,6 +130,84 @@ test('blocked egress emits call.blocked and refunds', async () => {
   assert.equal(res.status, 502)
   assert.equal((await res.json()).refunded, true)
   assert.deepEqual(recent(3).map((e) => e.type), ['call.paid', 'call.blocked', 'call.refunded'])
+})
+
+// Raw request so the malformed path reaches the server byte-for-byte.
+function rawPost(server, rawPath) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({ port: server.address().port, path: rawPath, method: 'POST' }, (res) => {
+      res.resume()
+      res.on('end', () => resolve(res.statusCode))
+    })
+    req.on('error', reject)
+    req.end('{}')
+  })
+}
+
+test('regression #1/#4: malformed encoding and prototype names are 404, server survives', async () => {
+  const gw = await listen(createGateway({ payments: stubPayments() }))
+  try {
+    for (const p of ['/t/%E0%A4%A', '/t/__proto__', '/t/constructor', '/t/hasOwnProperty']) {
+      assert.equal(await rawPost(gw, p), 404, p)
+    }
+    assert.equal(await rawPost(gw, '/t/nope'), 404) // still alive
+  } finally {
+    gw.close()
+  }
+})
+
+test('regression #2: non-string upstream error is still refunded', async () => {
+  upstreamMode = 'nonstring'
+  const payments = stubPayments()
+  const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+  assert.equal(res.status, 502)
+  assert.deepEqual(await res.json().then((b) => [b.error, b.refunded]), ['tool failed', true])
+  assert.deepEqual(payments.calls.refund, ['pi_stub_1'])
+})
+
+test('upstream redirect is not followed and is refunded (SSRF)', async () => {
+  upstreamMode = 'redirect'
+  const payments = stubPayments()
+  const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+  assert.equal(res.status, 502)
+  assert.match((await res.json()).error, /redirect/)
+  assert.deepEqual(payments.calls.refund, ['pi_stub_1'])
+})
+
+test('#3: event log failure after the charge still refunds', async () => {
+  upstreamMode = 'fail'
+  const log = path.join(process.env.VEND_DATA_DIR, 'events.jsonl')
+  fs.renameSync(log, `${log}.bak`)
+  fs.mkdirSync(log) // appendFileSync now throws EISDIR on every emit
+  try {
+    const payments = stubPayments()
+    const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+    assert.equal(res.status, 502)
+    assert.equal((await res.json()).refunded, true)
+    assert.deepEqual(payments.calls.refund, ['pi_stub_1'])
+  } finally {
+    fs.rmdirSync(log)
+    fs.renameSync(`${log}.bak`, log)
+  }
+})
+
+test('refund failure emits call.refund_failed once and says not refunded', async () => {
+  upstreamMode = 'fail'
+  const payments = { ...stubPayments(), refund: async () => { throw new Error('stripe down') } }
+  const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+  assert.equal((await res.json()).refunded, false)
+  assert.deepEqual(recent(3).map((e) => e.type), ['call.paid', 'call.failed', 'call.refund_failed'])
+})
+
+test('registerTool rejects bad prices and non-http upstreams', () => {
+  const base = { name: 'x', upstreamUrl: 'http://localhost:1' }
+  for (const priceUsd of [0.49, NaN, Infinity, 0.505, '1e400', -1]) {
+    assert.throws(() => registerTool({ ...base, priceUsd }), /priceUsd/, String(priceUsd))
+  }
+  for (const upstreamUrl of ['file:///etc/passwd', 'ftp://x', 'not a url']) {
+    assert.throws(() => registerTool({ ...base, priceUsd: 1, upstreamUrl }), /upstreamUrl/)
+  }
+  assert.equal(registerTool({ ...base, priceUsd: 0.5 }).priceUsd, 0.5)
 })
 
 test('ledger split is 90/10 and sums to the price', () => {

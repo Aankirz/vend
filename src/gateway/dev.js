@@ -8,6 +8,7 @@ import { createGateway } from './index.js'
 
 const PORT = Number(process.env.PORT || 4242)
 const DEV_TOOL_ID = 'dev-shout'
+const REQUEST_TIMEOUT_MS = 10_000
 
 function startFakeUpstream() {
   const server = http.createServer(async (req, res) => {
@@ -37,6 +38,8 @@ registerTool({
 })
 subscribe((e) => console.log(`[event] ${e.type}`, JSON.stringify(e.data)))
 const gateway = createGateway({ stripeSecretKey: process.env.STRIPE_SECRET_KEY, networkId: process.env.STRIPE_PROFILE_ID })
-http.createServer(gateway).listen(PORT, () => {
+const server = http.createServer(gateway)
+server.requestTimeout = REQUEST_TIMEOUT_MS
+server.listen(PORT, () => {
   console.log(`gateway on http://localhost:${PORT}  →  POST /t/${DEV_TOOL_ID}`)
 })
