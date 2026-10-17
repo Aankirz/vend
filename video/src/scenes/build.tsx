@@ -1,5 +1,5 @@
 // 5–11 s: the seller's build, as the /sell step player with the real log beside it.
-// Log lines are copied from the live site's build of the chart tool (public/capture/sell.png).
+// Log lines are copied from the live site's build of the chart tool (public/capture/sell-ledger.png).
 import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion'
 import { BEAT, color, ease, font } from '../tokens'
 import { Label } from './parts'

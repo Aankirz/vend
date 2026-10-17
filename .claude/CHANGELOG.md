@@ -100,3 +100,6 @@
 
 ## 2026-10-18 — fix: serve hairline from public/lib
 - CreateOS uploader drops folders named vendor; moved public/vendor/hairline.js to public/lib/ and updated the import in home.js.
+
+## 2026-10-18 — Launch video re-shot on the redesigned site
+- Re-captured / from the live site (isometric hero, 3 s hold) and re-rendered video/out/vend-launch.mp4 + vertical; ledger beats keep sell-ledger.png (earlier live capture with the real paid + BLOCKED rows, since the redeployed /sell is empty).

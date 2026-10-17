@@ -49,7 +49,7 @@ export function LedgerPush({ focus = 'paid' }: { focus?: 'paid' | 'blocked' }) {
   const fx = 1356, fy = focus === 'blocked' ? 340 : 330
   return (
     <AbsoluteFill style={{ background: color.paper, overflow: 'hidden' }}>
-      <Img src={staticFile('capture/sell.png')} style={{ width: 1920, height: 1080, transformOrigin: `${fx}px ${fy}px`, transform: `translate(${960 - fx}px, ${540 - fy}px) scale(${zoom})` }} />
+      <Img src={staticFile('capture/sell-ledger.png')} style={{ width: 1920, height: 1080, transformOrigin: `${fx}px ${fy}px`, transform: `translate(${960 - fx}px, ${540 - fy}px) scale(${zoom})` }} />
     </AbsoluteFill>
   )
 }

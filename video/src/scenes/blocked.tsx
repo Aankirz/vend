@@ -1,5 +1,5 @@
 // 20–24 s: the drop. A tool call that reached for the network is blocked and refunded.
-// The error text is the one the live site recorded (public/capture/sell.png, ledger row 1).
+// The error text is the one the live site recorded (public/capture/sell-ledger.png, ledger row 1).
 import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion'
 import { BEAT, color, ease, font } from '../tokens'
 import { Punch } from './parts'
