@@ -14,6 +14,9 @@ You are a builder on the Vend hackathon project (deadline 06:00 IST today — mo
 - Tests in `test/gateway*.test.js` with `node --test`: 404, 400-before-charge, 402 shape, paid → forwarded, upstream failure → refund called. Stub Stripe/mppx verification at the boundary for unit tests; keep one live-test-mode path behind an env flag.
 - Set `"test": "node --test"` in `package.json` scripts. Add needed env names (blank) to `.env.example`. Ensure `data/` is gitignored.
 
+## Facts already settled (by the coordinator)
+- `.env` already has `STRIPE_SECRET_KEY` (sk_test, verified `livemode:false`). Load it with `process.loadEnvFile?.()` or `node --env-file=.env`. No OWNER NEEDED for the key.
+
 ## Not in this phase
 Packaging agent, sandboxes, the seller web page, `src/server.js`, deployment, Stripe Connect transfers (ledger split only), MCP exposure.
 

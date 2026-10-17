@@ -4,7 +4,7 @@ You are a builder on the Vend hackathon project (deadline 06:00 IST today — mo
 
 ## Build
 - `examples/chart_tool.py` — the demo seller tool: a plain Python function `make_chart(data: list[{label, value}], title: str, kind: "bar"|"line") -> str` that returns a base64 PNG made with matplotlib. Plus `examples/broken_tool.py` with one realistic bug the agent must fix on the first test run (for the demo).
-- `src/packager/llm.js` — minimal chat call with `fetch` (no SDK). Provider by env: `OPENROUTER_API_KEY` (OpenAI-compatible `https://openrouter.ai/api/v1/chat/completions`) else `ANTHROPIC_API_KEY` (Messages API). Model from `VEND_MODEL`; look up a real current Claude model id for each provider's docs — do not invent one.
+- `src/packager/llm.js` — minimal chat call with `fetch` (no SDK) to **Vercel AI Gateway**, OpenAI-compatible: `POST https://ai-gateway.vercel.sh/v1/chat/completions`, `Authorization: Bearer $AI_GATEWAY_API_KEY`, model from `VEND_MODEL` defaulting to `stealth/cat-jam` (free; verified working by the coordinator). The key is already in `.env`. Ask for JSON output and parse defensively (strip code fences).
 - `src/packager/runner-local.js` and `src/packager/runner-createos.js` — same interface: `create()`, `writeFile(path, content)`, `exec(cmd) -> {exitCode, stdout, stderr}`, `startServer(cmd, port) -> url`, `destroy()`. CreateOS runner uses the installed `@nodeops-createos/sandbox` SDK (read its types in `node_modules`, do not guess): shape `s-1vcpu-1gb`, rootfs with Python + matplotlib (e.g. `devbox:1` — verify), **ingress enabled** (preview URL for port 8080), **egress allowlist empty/locked** after setup, auto-pause on if supported. Local runner uses a temp dir + `python3` subprocesses (for tests and offline dev).
 - `src/packager/index.js` — `packageTool({name, description, code, priceUsd}, {onLog, runner})`:
   1. LLM writes `server.py` (Python **stdlib only** `http.server`: `POST /run` JSON → call the tool → `{ok, result|error}`; `GET /health`) and `test_tool.py` (stdlib `unittest`, 3–5 cases incl. bad input), plus a JSON `inputSchema`.
@@ -13,6 +13,10 @@ You are a builder on the Vend hackathon project (deadline 06:00 IST today — mo
   4. `onLog` gets short human-readable lines for every step (they are shown live on the seller page): "writing wrapper", "running 4 tests", "test failed: …", "fixing", "✅ 4/4 passed", "network locked", "live at …".
 - `scripts/package.js` — CLI: `node scripts/package.js examples/chart_tool.py --price 0.50 [--local]` prints the log and the final URL.
 - Tests `test/packager*.test.js` (`node --test`): the write→test→fix loop with a **stubbed LLM** and the local runner (first reply buggy, second fixed → passes on attempt 2; always-broken → stops at cap). Skip tests that need python3/matplotlib cleanly if missing.
+
+## Facts already settled (by the coordinator)
+- `.env` already has `AI_GATEWAY_API_KEY`, `CREATEOS_SANDBOX_API_KEY` (verified: lists sandboxes, HTTP 200), `STRIPE_SECRET_KEY` (sk_test). Load it with `process.loadEnvFile?.()` or `node --env-file=.env`. No OWNER NEEDED for keys.
+- CreateOS is on the **free plan: 1 sandbox at a time**. Design for it: build, test and serve in the **same** sandbox; `scripts/package.js` must destroy any previous Vend sandbox first (or reuse it) and always destroy on failure. Never leave orphaned sandboxes.
 
 ## Not in this phase
 Payments, the gateway, `src/registry.js`/`src/events.js` (do not import them — just return the result), the seller web page, `src/server.js`, deploy.
