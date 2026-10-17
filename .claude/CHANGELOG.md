@@ -65,3 +65,6 @@
 
 ## 2026-10-18 — Gateway: BLOCKED on non-2xx tool replies
 - callUpstream reads the JSON body before mapping non-2xx, so `network blocked:` errors from real tools (HTTP 400) emit call.blocked; regression test.
+
+## 2026-10-18 — README: live URL and deploy
+- README top: live URL, try-it with chart-9c1c8e ($0.50) buyer one-liners, demo video placeholder; Deploy section matches deploy-owner.md (environment + promote).

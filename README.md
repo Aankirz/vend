@@ -3,9 +3,27 @@
 **Make your agent tool pay for itself.**
 Paste a tool → about 90 seconds later it is a verified, sandboxed, pay-per-call service any AI agent can buy with Stripe. Callers pay only if it works.
 
-> **Demo (90 s):** _video / GIF placeholder — `docs/demo.gif`_
->
-> **Live:** _deployed CreateOS URL goes here_ · Stripe **test mode** only: no real money moves.
+**Live:** **https://production-vend-gateway.tyzo.nodeops.app** · seller page at [`/sell`](https://production-vend-gateway.tyzo.nodeops.app/sell) · Stripe **test mode** only: no real money moves.
+
+**Demo video:** <link coming>
+
+### Try it: buy a chart for $0.50
+
+The live tool `chart-9c1c8e` renders a bar or line chart and returns it as a base64 PNG for $0.50 per call. An unpaid call gets `402 Payment Required`. The buyer pays with a Stripe **test** card through a Shared Payment Token and retries, then gets the chart plus a `Payment-Receipt`. Put your own Stripe test key (`sk_test_…`) in `.env` as `STRIPE_SECRET_KEY`, then run from a clone of this repo:
+
+```bash
+npm install
+node scripts/buyer.js https://production-vend-gateway.tyzo.nodeops.app/t/chart-9c1c8e '{"data":[{"label":"Jan","value":12},{"label":"Feb","value":19}],"title":"Monthly sales","kind":"bar"}'
+```
+
+Or with mppx's own CLI, no clone needed:
+
+```bash
+MPPX_STRIPE_SECRET_KEY=sk_test_... npx mppx https://production-vend-gateway.tyzo.nodeops.app/t/chart-9c1c8e \
+  -J '{"data":[{"label":"Jan","value":12},{"label":"Feb","value":19}],"title":"Monthly sales","kind":"bar"}' -M paymentMethod=pm_card_visa -i
+```
+
+Send `"kind":"pie"` to watch a failed call get refunded automatically.
 
 ---
 
@@ -93,20 +111,31 @@ For local builds without a sandbox, start with `VEND_RUNNER=local npm start`. Se
 
 ## Deploy (CreateOS)
 
-The app runs on the CreateOS app platform; the full runbook is in [`docs/phases/deploy-owner.md`](docs/phases/deploy-owner.md). The Stripe Projects key authenticates the CLI, so no browser login is needed:
+Live at **https://production-vend-gateway.tyzo.nodeops.app** on the CreateOS app platform: an upload project with Node 20 and port 8080, deployed to environment `production`. The full runbook is [`docs/phases/deploy-owner.md`](docs/phases/deploy-owner.md). The Stripe Projects key authenticates the CLI, so no browser login is needed:
 
 ```bash
 export CREATEOS_PROJECT_API_KEY="$(grep '^CREATEOS_PROJECT_API_KEY=' .env | cut -d= -f2-)"
+
+# 1. project (once)
 createos projects add --name "Vend" --unique-name vend-gateway --type upload --runtime node:20 \
   --port 8080 --install-command "npm install --omit=dev" --build-command "node --version" \
   --run-command "node src/server.js"          # or --runtime dockerfile (repo Dockerfile)
+
+# 2. environment (once): `env push` fails until the project has one; we use `production`
+#    (createos environments …, or the CreateOS dashboard)
+
+# 3. secrets, from a gitignored file
 grep -E '^(STRIPE_SECRET_KEY|AI_GATEWAY_API_KEY|CREATEOS_SANDBOX_API_KEY)=' .env > .env.createos
 echo "VEND_ADMIN_TOKEN=$(openssl rand -hex 16)" >> .env.createos   # required for public builds
+echo "VEND_PUBLIC_URL=https://production-vend-gateway.tyzo.nodeops.app" >> .env.createos
 createos env push --file .env.createos --force && rm .env.createos
-createos deploy                               # prints "Live at: https://…"
+
+# 4. deploy, then promote: `createos deploy` does NOT attach the new deployment to the environment
+createos deploy                               # prints "Live at: https://…" with the new deployment id
+createos deployments promote --project <project-id> --deployment <new-deployment-id> --environment <environment-id>
 ```
 
-Secrets go in through `createos env`, never git. `.env*` and `data/` are excluded from the upload.
+Secrets go in through `createos env`, never git. `.env*` and `data/` are excluded from the upload, so the tool registry starts empty after a redeploy. Re-vend on `/sell`, or set `VEND_SEED_TOOL_URL`.
 
 ### Environment variables
 
