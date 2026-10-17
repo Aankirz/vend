@@ -15,17 +15,23 @@ function requireKey(apiKey) {
 }
 
 // Only ever touches sandboxes Vend created (name starts with "vend-").
-export async function destroyVendSandboxes({ apiKey = process.env.CREATEOS_SANDBOX_API_KEY, keep } = {}) {
+export async function destroyVendSandboxes({ apiKey = process.env.CREATEOS_SANDBOX_API_KEY } = {}) {
   requireKey(apiKey);
   const client = new CreateosSandboxClient({ apiKey });
   const ours = (await client.listSandboxes()).filter(
-    (s) => s.name?.startsWith(NAME_PREFIX) && s.id !== keep && !['destroying', 'destroyed'].includes(s.status),
+    (s) => s.name?.startsWith(NAME_PREFIX) && !['destroying', 'destroyed'].includes(s.status),
   );
   for (const s of ours) await s.destroy();
   return ours.map((s) => s.id);
 }
 
-export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API_KEY } = {}) {
+async function findReusable(client, reuseId) {
+  if (reuseId) return client.getSandbox(reuseId);
+  const running = (await client.listSandboxes()).filter((s) => s.name?.startsWith(NAME_PREFIX) && s.status === 'running');
+  return running[0];
+}
+
+export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API_KEY, reuseId } = {}) {
   let sandbox;
   const run = async (script) => {
     const { result } = await sandbox.runCommand('bash', ['-lc', script], { timeoutMs: EXEC_TIMEOUT_MS });
@@ -33,13 +39,20 @@ export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API
   };
   return {
     get id() { return sandbox?.id; },
+    // Reuses `reuseId`, else a running vend-* sandbox, else creates one: the free plan allows ~10 creations/day.
     async create() {
       requireKey(apiKey);
+      const client = new CreateosSandboxClient({ apiKey });
+      sandbox = await findReusable(client, reuseId);
+      if (sandbox) {
+        await sandbox.setEgress(LOCKED_EGRESS);
+        await run(`pkill -f '[p]ython3 server.py'; rm -rf ${WORKDIR}; mkdir -p ${WORKDIR}`);
+        return;
+      }
       await destroyVendSandboxes({ apiKey });
-      const autoPause = Number(process.env.VEND_AUTO_PAUSE_SECONDS) || undefined;
-      sandbox = await new CreateosSandboxClient({ apiKey }).createSandbox({
+      sandbox = await client.createSandbox({
         shape: SHAPE, rootfs: ROOTFS, name: `${NAME_PREFIX}${Date.now()}`,
-        ingress_enabled: true, auto_pause_after_seconds: autoPause,
+        ingress_enabled: true, egress: LOCKED_EGRESS, // locked before any seller/LLM code runs; auto-pause off on purpose
       });
       await run(`mkdir -p ${WORKDIR}`);
     },
@@ -51,7 +64,7 @@ export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API
       await sandbox.waitForPortReady(port, { timeoutMs: 30_000 });
       return sandbox.previewUrl(port);
     },
-    // Returns true only if an outbound request from inside the sandbox actually fails afterwards.
+    // Egress is locked at create; returns true only if an outbound request from inside actually fails.
     async lockNetwork() {
       await sandbox.setEgress(LOCKED_EGRESS);
       for (let i = 0; i < 5; i++) {

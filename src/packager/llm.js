@@ -16,17 +16,30 @@ export function parseJson(text) {
   }
 }
 
-export async function chatJson(messages, { apiKey = process.env.AI_GATEWAY_API_KEY, model = process.env.VEND_MODEL || DEFAULT_MODEL } = {}) {
-  if (!apiKey) throw new Error('AI_GATEWAY_API_KEY is not set (add it to .env)');
+const MAX_TRIES = 3;
+const RETRY_DELAY_MS = 5000;
+
+async function postOnce(messages, apiKey, model) {
   const res = await fetch(GATEWAY_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, messages, response_format: { type: 'json_object' } }),
     signal: AbortSignal.timeout(180_000),
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`AI Gateway HTTP ${res.status}: ${text.slice(0, 300)}`);
-  const content = JSON.parse(text).choices?.[0]?.message?.content;
-  if (!content) throw new Error(`AI Gateway returned no content: ${text.slice(0, 300)}`);
+  return { status: res.status, ok: res.ok, text: await res.text() };
+}
+
+export async function chatJson(messages, { apiKey = process.env.AI_GATEWAY_API_KEY, model = process.env.VEND_MODEL || DEFAULT_MODEL } = {}) {
+  if (!apiKey) throw new Error('AI_GATEWAY_API_KEY is not set (add it to .env)');
+  let res;
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    // The free stealth model sometimes answers 400 provider_error; retry everything except auth failures.
+    res = await postOnce(messages, apiKey, model);
+    if (res.ok || res.status === 401 || res.status === 403) break;
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+  }
+  if (!res.ok) throw new Error(`AI Gateway HTTP ${res.status}: ${res.text.slice(0, 300)}`);
+  const content = JSON.parse(res.text).choices?.[0]?.message?.content;
+  if (!content) throw new Error(`AI Gateway returned no content: ${res.text.slice(0, 300)}`);
   return parseJson(content);
 }

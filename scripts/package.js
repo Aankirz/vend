@@ -10,7 +10,7 @@ try { process.loadEnvFile?.(); } catch { /* no .env: rely on the real environmen
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { price: { type: 'string', default: '0.50' }, local: { type: 'boolean', default: false }, name: { type: 'string' } },
+  options: { price: { type: 'string', default: '0.50' }, local: { type: 'boolean', default: false }, name: { type: 'string' }, reuse: { type: 'string' } },
 });
 
 function fail(message) {
@@ -22,11 +22,11 @@ function fail(message) {
 
 async function main() {
   const file = positionals[0];
-  if (!file) fail('usage: node scripts/package.js <tool.py> [--price 0.50] [--local]');
+  if (!file) fail('usage: node scripts/package.js <tool.py> [--price 0.50] [--local | --reuse <sandboxId>]');
   if (!values.local && !process.env.CREATEOS_SANDBOX_API_KEY) fail('CREATEOS_SANDBOX_API_KEY is not set (or pass --local)');
   if (!process.env.AI_GATEWAY_API_KEY) fail('AI_GATEWAY_API_KEY is not set');
   const code = await readFile(file, 'utf8');
-  const runner = values.local ? createLocalRunner() : createCreateosRunner();
+  const runner = values.local ? createLocalRunner() : createCreateosRunner({ reuseId: values.reuse });
   const name = values.name || basename(file, '.py');
   const started = Date.now();
   const result = await packageTool(
@@ -39,7 +39,7 @@ async function main() {
     console.log('local server running — Ctrl-C to stop');
     process.on('SIGINT', () => runner.destroy().finally(() => process.exit(0)));
   } else {
-    console.log(`sandbox ${result.sandboxId} stays up; next package run replaces it`);
+    console.log(`sandbox ${result.sandboxId} stays up; next package run reuses it`);
     process.exit(0);
   }
 }

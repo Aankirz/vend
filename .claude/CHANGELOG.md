@@ -27,3 +27,8 @@
 - SSRF: upstream fetch uses redirect:'manual' (3xx = failure); registerTool requires http(s) upstreamUrl. Upstream response capped at 1 MB; oversized request bodies destroy the socket; dev server requestTimeout 10s.
 - Registry: own-property lookup (no __proto__/constructor hits), atomic tools.json writes, price must be finite whole cents >= $0.50.
 - Regression tests for each; live test-mode run evidenced in hand-off.
+
+## 2026-10-18 — Packager: Amendment A + live-LLM fixes
+- CreateOS runner: egress locked at create (`["192.0.2.1:9"]`), reuses a running vend-* sandbox or `--reuse <id>`, auto-pause removed.
+- Example tools: optional `source_url` path; network failure raises `network blocked: ...` (HTTP errors do not).
+- LLM: retries provider errors; fix turns folded into one user message (stealth/cat-jam rejects assistant turns with 400); base64 blobs shrunk in prompts/logs; seller code untouched until a test fails.
