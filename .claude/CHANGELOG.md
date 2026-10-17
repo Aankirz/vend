@@ -40,3 +40,6 @@
 - Added src/server.js: gateway mount (/t/:id, /openapi.json), /api/tools (list + admin-gated single-build submit → packageTool → registerTool), /api/events SSE (backlog from events.jsonl), /api/stats, static public/.
 - Added public/index.html, public/sell.html, public/app.js, public/styles.css (light/dark tokens, Inter + JetBrains Mono, textContent-only rendering, 375px-safe).
 - Rewrote README (Stripe Projects, MPP, CreateOS Sandbox, architecture, GTM, roadmap, limits); npm start; .env.example lists every env var; test/server.test.js.
+
+## 2026-10-18 — Deploy owner steps
+- Added docs/phases/deploy-owner.md: denied createos command + error text, exact owner deploy/verify commands, fallbacks.
