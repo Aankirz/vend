@@ -33,6 +33,6 @@ Before recording: open `/sell` at 1440×900, have the admin token ready (`grep V
 ## 3. Checklist (you)
 - [ ] Record + upload video (YouTube unlisted / Loom); paste link here and in README.
 - [x] Post on X (done). LinkedIn: only when the owner says so.
-- [ ] Leaderboard (projects.dev/leaderboard, code `CreateOS-2026`): account ID from `stripe whoami`, share link from `stripe projects share`, repo URL, live URL above.
+- [x] Leaderboard: submitted as "vend" (code createos-2026, stack https://projects.dev/s#v1:createos~project). Vote link: https://projects.dev/vote/vend
 - [ ] Submission form (link in Discord #announcements): team details, repo, live URL, video, post link.
 - [ ] After the hackathon: roll the Stripe test key (it was pasted in chat once).
