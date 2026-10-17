@@ -1,5 +1,5 @@
 // Seller page: submit a tool, play the build as steps, and tick earnings as paid calls land.
-import { coalesce, el, getJson, onEvents, reducedMotion, rollTo, usd } from '/app.js'
+import { coalesce, count, el, getJson, onEvents, reducedMotion, rollTo, usd } from '/app.js'
 
 const $ = (id) => document.getElementById(id)
 const form = $('sell-form'), log = $('log'), status = $('build-status'), msg = $('form-msg'), submitBtn = $('submit')
@@ -111,9 +111,13 @@ function classify(line) {
   return ''
 }
 
+// A failing test can echo a whole base64 PNG; show the head and keep the full line in the tooltip.
+const MAX_LOG_CHARS = 240
 function logLine(text, kind = classify(text), ts = new Date().toISOString()) {
   const time = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-  log.append(el('span', { class: `log-line ${kind}` }, el('span', { class: 't' }, time), text))
+  const long = text.length > MAX_LOG_CHARS
+  const shown = long ? `${text.slice(0, MAX_LOG_CHARS)}… (+${count(text.length - MAX_LOG_CHARS)} chars)` : text
+  log.append(el('span', { class: `log-line ${kind}`, ...(long && { title: text }) }, el('span', { class: 't' }, time), shown))
   log.scrollTop = log.scrollHeight
 }
 
@@ -174,7 +178,7 @@ function onBuild(event) {
     return setStatus('building', 'running')
   }
   if (ok) {
-    logLine(`✅ verified in ${attempts} attempt(s) · live at ${location.origin}${path}`, 'live', event.ts)
+    logLine(`✅ verified in ${attempts} ${attempts === 1 ? 'attempt' : 'attempts'} · live at ${location.origin}${path}`, 'live', event.ts)
     mark('green', 'done')
     mark('live', 'live')
     setStatus('live', 'ok')
@@ -225,8 +229,15 @@ function onCall(event, isLive) {
   if (d.error) row.sub.textContent = String(d.error).slice(0, 80)
   else if (!row.sub.textContent) row.sub.textContent = new Date(event.ts).toLocaleTimeString()
   if (event.type === 'call.ok' && d.ledger) row.split.textContent = `+${usd(d.ledger.sellerCents)} / ${usd(d.ledger.vendCents)}`
-  if (event.type === 'call.refunded') row.split.textContent = `−$${Number(d.amountUsd || 0).toFixed(2)}`
+  if (event.type === 'call.refunded') row.split.textContent = `−${usd(Math.round(Number(d.amountUsd || 0) * 100))}`
   if (event.type === 'call.ok' && isLive && d.ledger) floatDelta(d.ledger.sellerCents)
+  if (event.type === 'call.blocked' && isLive) pop(row.badge)
+}
+
+// The paid → BLOCKED swap is the trust moment of the demo; a 200ms settle makes the change legible.
+function pop(node) {
+  if (reducedMotion()) return
+  node.animate([{ transform: 'scale(0.92)', opacity: 0.6 }, { transform: 'none', opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' })
 }
 
 /* ───────── Earnings ───────── */
@@ -240,10 +251,12 @@ function floatDelta(cents) {
   delta.addEventListener('animationend', () => delta.remove())
 }
 
+const LONG_AMOUNT_CHARS = 9 // "$9,999.99"; longer totals step the hero number down a size
 async function refreshStats() {
   try {
     const s = await getJson('/api/stats')
     const seller = $('s-seller')
+    seller.dataset.long = String(usd(s.sellerCents).length > LONG_AMOUNT_CHARS)
     if (rollTo(seller, s.sellerCents, usd)) {
       seller.classList.add('tick')
       requestAnimationFrame(() => requestAnimationFrame(() => seller.classList.remove('tick')))

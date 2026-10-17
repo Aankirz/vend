@@ -13,7 +13,10 @@ export function el(tag, attrs = {}, ...children) {
   return node
 }
 
-export const usd = (cents) => `$${(cents / 100).toFixed(2)}`
+const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const INT = new Intl.NumberFormat('en-US')
+export const usd = (cents) => USD.format(cents / 100)
+export const count = (n) => INT.format(n)
 export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export async function getJson(url) {
@@ -59,19 +62,25 @@ export function toolCard(tool) {
   return el('article', { class: 'tool' },
     el('div', { class: 'tool-head' },
       el('h3', { class: 'tool-name' }, tool.name),
-      el('span', { class: 'price' }, `$${Number(tool.priceUsd).toFixed(2)} / call`),
+      el('span', { class: 'price' }, `${usd(Math.round(Number(tool.priceUsd) * 100))} / call`),
       el('p', { class: 'tool-desc' }, tool.description || 'No description.'),
     ),
     el('div', { class: 'snippets' }, snippets),
   )
 }
 
+// ponytail: plain show-all, paginate if the list ever reaches thousands.
+const TOOLS_SHOWN = 6
 export async function renderTools(container) {
   try {
     const tools = await getJson('/api/tools')
-    container.replaceChildren(...(tools.length
-      ? tools.map(toolCard)
-      : [el('div', { class: 'empty' }, 'No tools are live yet. ', el('a', { href: '/sell' }, 'Vend the first one →'))]))
+    if (!tools.length) return container.replaceChildren(el('div', { class: 'empty' }, 'No tools are live yet. ', el('a', { href: '/sell' }, 'Vend the first one →')))
+    container.replaceChildren(...tools.slice(0, TOOLS_SHOWN).map(toolCard))
+    if (tools.length > TOOLS_SHOWN) {
+      const more = el('button', { class: 'btn show-all', type: 'button' }, `Show all ${count(tools.length)} tools`)
+      more.addEventListener('click', () => more.replaceWith(...tools.slice(TOOLS_SHOWN).map(toolCard)))
+      container.append(more)
+    }
   } catch (err) {
     container.replaceChildren(el('div', { class: 'empty' }, `Could not load tools: ${err.message}`))
   }
@@ -105,7 +114,7 @@ export function coalesce(fn, waitMs = 250) {
 
 const ROLL_MS = 700
 // Rolls a number up (or down) to `value`, formatting each frame. Returns true when the value changed.
-export function rollTo(node, value, format = String) {
+export function rollTo(node, value, format = count) {
   if (!node) return false
   const from = Number(node.dataset.value ?? value)
   node.dataset.value = String(value)
