@@ -8,7 +8,7 @@ import http from 'node:http'
 process.env.VEND_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'vend-app-'))
 const { createApp, computeStats, exampleInput, sanitizeSchema, liveTools } = await import('../src/server.js')
 const { recent } = await import('../src/events.js')
-const { getTool } = await import('../src/registry.js')
+const { getTool, registerTool } = await import('../src/registry.js')
 
 const noGateway = (req, res) => res.writeHead(402).end()
 const servers = []
@@ -169,3 +169,70 @@ test('#6 /api/stats stays current from the event bus without re-reading the log'
   assert.equal(after.paidCalls - before.paidCalls, 1)
   assert.equal(after.sellerCents - before.sellerCents, 45)
 })
+
+describeTry()
+function describeTry() {
+  const receiptHeader = async () => {
+    const { Receipt } = await import('mppx')
+    return Receipt.serialize({ method: 'stripe', status: 'success', timestamp: new Date().toISOString(), reference: 'pi_stub_try' })
+  }
+  // Stub payment client: announces a $0.50 challenge, then answers like the gateway would.
+  const stubBuyer = (reply, seen = []) => (key, log) => async (url, init) => {
+    seen.push({ url, input: JSON.parse(init.body) })
+    log('402 received', { amount: '50', currency: 'usd', challenge: { id: 'ch_stub' } })
+    return new Response(JSON.stringify(reply), { status: reply.ok ? 200 : 502, headers: { 'payment-receipt': await receiptHeader() } })
+  }
+  const tryTool = async (base, id, body = {}) => fetch(`${base}/api/try/${id}`, { method: 'POST', body: JSON.stringify(body) })
+  const chartTool = () => registerTool({
+    name: 'chart', priceUsd: 0.5, upstreamUrl: 'http://localhost:9',
+    inputSchema: { type: 'object', required: ['data'], properties: { data: { type: 'array', examples: [[{ label: 'a', value: 1 }]] }, source_url: { type: 'string' } } },
+  })
+
+  test('try: refuses without a Stripe test key', async () => {
+    const tool = chartTool()
+    for (const stripeSecretKey of [undefined, 'sk_live_whatever', 'rk_test_x']) {
+      const base = await start({ stripeSecretKey, makeBuyerFetch: () => assert.fail('must not pay') })
+      assert.equal((await tryTool(base, tool.id)).status, 503)
+    }
+  })
+
+  test('try: returns request → 402 → paid → result with the chart', async () => {
+    const tool = chartTool()
+    const seen = []
+    const base = await start({ stripeSecretKey: 'sk_test_unit', makeBuyerFetch: stubBuyer({ ok: true, result: 'iVBORw0KGgo' }, seen) })
+    const out = await (await tryTool(base, tool.id)).json()
+    assert.deepEqual(out.steps.map((s) => s.t), ['request', '402', 'paid', 'result'])
+    assert.deepEqual(out.steps[1], { t: '402', amountUsd: 0.5, challengeId: 'ch_stub' })
+    assert.equal(out.steps[2].paymentIntent, 'pi_stub_try')
+    assert.deepEqual(out.steps[3], { t: 'result', ok: true, result: 'iVBORw0KGgo', blocked: false })
+    assert.equal(out.receipt.reference, 'pi_stub_try')
+    assert.match(seen[0].url, new RegExp(`/t/${tool.id}$`))
+    assert.deepEqual(seen[0].input, { data: [{ label: 'a', value: 1 }] }) // example input by default
+  })
+
+  test('try: evil input points the URL field outside and reports blocked + refunded', async () => {
+    const tool = chartTool()
+    const seen = []
+    const reply = { ok: false, error: 'network blocked: <urlopen error>', refunded: true, refundId: 're_1' }
+    const base = await start({ stripeSecretKey: 'sk_test_unit', makeBuyerFetch: stubBuyer(reply, seen) })
+    const out = await (await tryTool(base, tool.id, { evil: true })).json()
+    assert.match(seen[0].input.source_url, /^https:\/\//)
+    assert.deepEqual(out.steps.at(-1), { t: 'result', ok: false, error: reply.error, refunded: true, blocked: true })
+  })
+
+  test('try: a second call from the same IP within 10 s gets 429', async () => {
+    const tool = chartTool()
+    const base = await start({ stripeSecretKey: 'sk_test_unit', makeBuyerFetch: stubBuyer({ ok: true, result: 'x' }) })
+    assert.equal((await tryTool(base, tool.id)).status, 200)
+    const second = await tryTool(base, tool.id)
+    assert.equal(second.status, 429)
+    assert.match((await second.json()).error, /10 seconds/)
+  })
+
+  test('try: unknown tool 404, non-object body 400', async () => {
+    const base = await start({ stripeSecretKey: 'sk_test_unit', makeBuyerFetch: stubBuyer({ ok: true }) })
+    assert.equal((await tryTool(base, 'nope')).status, 404)
+    const tool = chartTool()
+    assert.equal((await fetch(`${base}/api/try/${tool.id}`, { method: 'POST', body: '[1]' })).status, 400)
+  })
+}

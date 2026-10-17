@@ -27,7 +27,7 @@ async function createTestSpt(secretKey, { amount, currency, expiresAt, paymentMe
   return body.id
 }
 
-// A fetch that pays MPP 402 challenges with test SPTs. `log` sees each challenge.
+// A fetch that pays MPP 402 challenges with test SPTs. `log(message, challengeParams)` sees each challenge.
 export function createBuyerFetch(secretKey, log = () => {}) {
   if (!secretKey?.startsWith('sk_test_')) throw new Error('buyer needs a Stripe test secret key (sk_test_...)')
   const mppx = Mppx.create({
@@ -36,7 +36,7 @@ export function createBuyerFetch(secretKey, log = () => {}) {
       stripe.charge({
         paymentMethod: TEST_PAYMENT_METHOD,
         createToken: async (p) => {
-          log(`402 received: paying ${(Number(p.amount) / 100).toFixed(2)} ${p.currency.toUpperCase()} with a test SPT`)
+          log(`402 received: paying ${(Number(p.amount) / 100).toFixed(2)} ${p.currency.toUpperCase()} with a test SPT`, p)
           return createTestSpt(secretKey, p)
         },
       }),

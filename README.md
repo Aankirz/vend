@@ -9,18 +9,30 @@ Paste a tool → about 90 seconds later it is a verified, sandboxed, pay-per-cal
 
 ### Try it: buy a chart for $0.50
 
-The live tool `chart-9c1c8e` renders a bar or line chart and returns it as a base64 PNG for $0.50 per call. An unpaid call gets `402 Payment Required`. The buyer pays with a Stripe **test** card through a Shared Payment Token and retries, then gets the chart plus a `Payment-Receipt`. Put your own Stripe test key (`sk_test_…`) in `.env` as `STRIPE_SECRET_KEY`, then run from a clone of this repo:
+**One click:** open **https://production-vend-gateway.tyzo.nodeops.app** and press **Try a paid call** on a live tool. You will see the four steps:
+
+1. the request,
+2. `402 Payment Required` for $0.50,
+3. a Stripe test payment (a real `pi_…` PaymentIntent),
+4. the chart.
+
+**Try the BLOCKED call** to watch the sandbox stop a tool that phones home: you get **BLOCKED**, then an automatic **refund**. Both calls go through the normal gateway, so they appear on [`/sell`](https://production-vend-gateway.tyzo.nodeops.app/sell) and in the live counters.
+
+The button calls this endpoint, which you can also call directly:
+
+```bash
+curl -X POST https://production-vend-gateway.tyzo.nodeops.app/api/try/chart-9c1c8e                    # paid call → chart
+curl -X POST https://production-vend-gateway.tyzo.nodeops.app/api/try/chart-9c1c8e -d '{"evil":true}'  # BLOCKED → refunded
+```
+
+It returns `{ steps: [request, 402, paid, result], receipt }`. Vend acts as a demo buyer against its own gateway with a Stripe **test** card, limited to one call per IP every 10 s and 30 per hour.
+
+**From the command line (for cloning and self-hosting):** `scripts/buyer.js` pays with a test-helper Shared Payment Token. Stripe grants that token to the account whose key creates it, so this only works with the **seller's own** test key, i.e. against your own deployment of Vend:
 
 ```bash
 npm install
-node scripts/buyer.js https://production-vend-gateway.tyzo.nodeops.app/t/chart-9c1c8e '{"data":[{"label":"Jan","value":12},{"label":"Feb","value":19}],"title":"Monthly sales","kind":"bar"}'
-```
-
-Or with mppx's own CLI, no clone needed:
-
-```bash
-MPPX_STRIPE_SECRET_KEY=sk_test_... npx mppx https://production-vend-gateway.tyzo.nodeops.app/t/chart-9c1c8e \
-  -J '{"data":[{"label":"Jan","value":12},{"label":"Feb","value":19}],"title":"Monthly sales","kind":"bar"}' -M paymentMethod=pm_card_visa -i
+node scripts/buyer.js https://<your-vend>/t/<tool-id> '{"data":[{"label":"Jan","value":12},{"label":"Feb","value":19}],"title":"Monthly sales","kind":"bar"}'
+# or: MPPX_STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY npx mppx https://<your-vend>/t/<tool-id> -J '{...}' -M paymentMethod=pm_card_visa -i
 ```
 
 Send `"kind":"pie"` to watch a failed call get refunded automatically.
@@ -161,6 +173,7 @@ Secrets go in through `createos env`, never git. `.env*` and `data/` are exclude
 | `POST /api/tools` | `{name, description, code, priceUsd}` → `202 {jobId}`; one build at a time (409 otherwise) |
 | `GET /api/events` | Server-Sent Events: build log, paid / refunded / blocked calls |
 | `GET /api/stats` | totals: paid calls, seller earnings, Vend fee, refunds, blocked |
+| `POST /api/try/:id` | demo purchase by Vend's own test buyer → `{steps, receipt}`; `{"evil":true}` triggers BLOCKED → refund; rate-limited |
 
 ## Go-to-market
 

@@ -68,3 +68,6 @@
 
 ## 2026-10-18 — README: live URL and deploy
 - README top: live URL, try-it with chart-9c1c8e ($0.50) buyer one-liners, demo video placeholder; Deploy section matches deploy-owner.md (environment + promote).
+
+## 2026-10-18 — Phase 5: Try a paid call API
+- POST /api/try/:toolId: Vend pays its own gateway with a test SPT (reuses scripts/buyer.js) and returns request → 402 → paid → result steps + receipt; {"evil":true} points the tool URL field outside to trigger BLOCKED → refund. Test-key only, per-IP 10 s + 30/h limits, 30 s timeout. src/demo-buyer.js, tests, README Try-it.

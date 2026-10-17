@@ -6,7 +6,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createGateway } from './gateway/index.js'
 import { emit, subscribe } from './events.js'
-import { listTools, registerTool } from './registry.js'
+import { getTool, listTools, registerTool } from './registry.js'
+import { evilInput, tryPaidCall } from './demo-buyer.js'
+import { createBuyerFetch } from '../scripts/buyer.js'
 import { packageTool as realPackageTool } from './packager/index.js'
 import { createLocalRunner } from './packager/runner-local.js'
 import { createCreateosRunner } from './packager/runner-createos.js'
@@ -24,6 +26,12 @@ const SSE_HEARTBEAT_MS = 25_000
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/
 const STATIC_PAGES = { '/': 'index.html', '/sell': 'sell.html' }
 const CONTENT_TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' }
+const TRY_MAX_BODY_BYTES = 4 * 1024
+const TRY_TIMEOUT_MS = 30_000
+const TRY_PER_IP_MS = 10_000
+const TRY_GLOBAL_PER_HOUR = 30
+const HOUR_MS = 60 * 60 * 1000
+const MAX_TRACKED_IPS = 5000
 const MAX_SCHEMA_BYTES = 16 * 1024
 const DEFAULT_SCHEMA = { type: 'object' }
 const URL_PATTERN = /https?:\/\/\S+/g
@@ -244,6 +252,63 @@ function createBuildHandler({ packageTool, makeRunner, ...guard }) {
   }
 }
 
+// Behind the CreateOS proxy the client is the last X-Forwarded-For hop (the one the proxy appended).
+function clientIp(req) {
+  const hops = String(req.headers['x-forwarded-for'] || '').split(',').map((h) => h.trim()).filter(Boolean)
+  return hops.at(-1) || req.socket.remoteAddress || 'unknown'
+}
+
+// In-memory abuse limits for demo purchases: 1 per IP per 10 s, 30 per hour overall.
+function createTryLimiter(now = Date.now) {
+  const lastByIp = new Map()
+  let recentCalls = []
+  return function refuse(ip) {
+    const t = now()
+    recentCalls = recentCalls.filter((at) => t - at < HOUR_MS)
+    if (recentCalls.length >= TRY_GLOBAL_PER_HOUR) return 'The demo budget for this hour is used up. Try again later, or run scripts/buyer.js yourself.'
+    const last = lastByIp.get(ip)
+    if (last && t - last < TRY_PER_IP_MS) return `One demo call every ${TRY_PER_IP_MS / 1000} seconds, please. Try again in a moment.`
+    if (lastByIp.size > MAX_TRACKED_IPS) lastByIp.clear() // ponytail: crude cap, fine for in-memory demo limits
+    lastByIp.set(ip, t)
+    recentCalls.push(t)
+    return null
+  }
+}
+
+// POST /api/try/:toolId: Vend buys from its own gateway with a test SPT so anyone can watch 402 → pay → result.
+function createTryHandler({ stripeSecretKey, makeBuyerFetch }) {
+  const refuse = createTryLimiter()
+  return async function tryTool(req, res, toolId) {
+    if (!stripeSecretKey?.startsWith('sk_test_')) return sendJson(res, 503, { ok: false, error: 'demo purchases are disabled: the server has no Stripe test key' })
+    const tool = getTool(toolId)
+    if (!tool) return sendJson(res, 404, { ok: false, error: 'unknown tool' })
+    const body = await readJsonBody(req, TRY_MAX_BODY_BYTES)
+    if (!isPlainObject(body)) return sendJson(res, 400, { ok: false, error: 'body must be a JSON object' })
+    const { evil, ...custom } = body
+    const example = exampleInput(tool.inputSchema)
+    const input = evil === true ? evilInput(tool, example) : Object.keys(custom).length ? custom : example
+    const refusal = refuse(clientIp(req))
+    if (refusal) return sendJson(res, 429, { ok: false, error: refusal })
+    const url = `http://127.0.0.1:${req.socket.localPort}/t/${encodeURIComponent(tool.id)}`
+    try {
+      const out = await tryPaidCall({ url, input, timeoutMs: TRY_TIMEOUT_MS, makeBuyerFetch: (log) => makeBuyerFetch(stripeSecretKey, log) })
+      sendJson(res, 200, { ok: true, ...out })
+    } catch (err) {
+      const timedOut = err.name === 'TimeoutError'
+      if (!timedOut) console.error('[server] demo purchase failed', err)
+      sendJson(res, timedOut ? 504 : 502, { ok: false, error: timedOut ? 'the demo call timed out after 30 s' : 'the demo purchase failed' })
+    }
+  }
+}
+
+function tryToolId(pathname) {
+  try {
+    return decodeURIComponent(pathname.slice('/api/try/'.length))
+  } catch {
+    return ''
+  }
+}
+
 function serveStatic(req, res) {
   let urlPath
   try {
@@ -266,10 +331,13 @@ export function createApp({
   sandboxKey = process.env.CREATEOS_SANDBOX_API_KEY,
   makeRunner = () => makeDefaultRunner(runnerMode),
   adminToken = process.env.VEND_ADMIN_TOKEN,
+  stripeSecretKey = process.env.STRIPE_SECRET_KEY,
+  makeBuyerFetch = createBuyerFetch,
 } = {}) {
   const pay = gateway || createGateway({ stripeSecretKey: process.env.STRIPE_SECRET_KEY, networkId: process.env.STRIPE_PROFILE_ID })
   const submitTool = createBuildHandler({ packageTool, makeRunner, runnerMode, sandboxKey, adminToken })
   const history = createHistory()
+  const tryTool = createTryHandler({ stripeSecretKey, makeBuyerFetch })
   const routes = {
     'GET /api/tools': (req, res) => sendJson(res, 200, liveTools(listTools()).map((t) => publicTool(t, originOf(req)))),
     'GET /api/stats': (req, res) => sendJson(res, 200, history.stats()),
@@ -282,6 +350,7 @@ export function createApp({
     const pathname = req.url.split('?')[0]
     try {
       if (pathname.startsWith('/t/') || pathname === '/openapi.json') return await pay(req, res)
+      if (req.method === 'POST' && pathname.startsWith('/api/try/')) return await tryTool(req, res, tryToolId(pathname))
       const handler = routes[`${req.method} ${pathname}`]
       if (handler) return await handler(req, res)
       if (req.method === 'GET') return serveStatic(req, res)
