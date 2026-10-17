@@ -24,6 +24,9 @@ const SSE_HEARTBEAT_MS = 25_000
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/
 const STATIC_PAGES = { '/': 'index.html', '/sell': 'sell.html' }
 const CONTENT_TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' }
+const MAX_SCHEMA_BYTES = 16 * 1024
+const DEFAULT_SCHEMA = { type: 'object' }
+const URL_PATTERN = /https?:\/\/\S+/g
 const PLACEHOLDER_BY_TYPE = { string: 'hello', number: 1, integer: 1, boolean: false, array: [], object: {} }
 
 const sendJson = (res, status, body) => res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body))
@@ -72,8 +75,35 @@ function exampleValue(schema = {}, depth = 0) {
   return Object.fromEntries(keys.map((key) => [key, exampleValue(props[key], depth + 1)]))
 }
 
-// Example request body for the buyer snippet.
-export const exampleInput = (schema = {}) => exampleValue({ ...schema, type: 'object' })
+// Example request body for the buyer snippet; a malformed schema yields {} instead of a 500.
+export function exampleInput(schema = {}) {
+  try {
+    return exampleValue({ ...schema, type: 'object' })
+  } catch {
+    return {}
+  }
+}
+
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
+
+// LLM-written schemas are untrusted: keep only well-formed, bounded ones.
+export function sanitizeSchema(schema) {
+  if (!isPlainObject(schema)) return DEFAULT_SCHEMA
+  if (schema.required !== undefined && !(Array.isArray(schema.required) && schema.required.every((k) => typeof k === 'string'))) return DEFAULT_SCHEMA
+  if (schema.properties !== undefined && !isPlainObject(schema.properties)) return DEFAULT_SCHEMA
+  if (JSON.stringify(schema).length > MAX_SCHEMA_BYTES) return DEFAULT_SCHEMA
+  return schema
+}
+
+// One sandbox serves one tool, so only the newest tool per sandbox is live.
+export function liveTools(tools) {
+  const newest = new Map()
+  for (const tool of tools) {
+    const current = tool.sandboxId && newest.get(tool.sandboxId)
+    if (tool.sandboxId && (!current || tool.createdAt > current.createdAt)) newest.set(tool.sandboxId, tool)
+  }
+  return tools.filter((tool) => !tool.sandboxId || newest.get(tool.sandboxId) === tool)
+}
 
 const publicTool = (tool, origin) => ({
   id: tool.id,
@@ -87,19 +117,20 @@ const publicTool = (tool, origin) => ({
 
 const cents = (n) => Math.round(n * 100)
 
-export function computeStats(events) {
-  const stats = { paidCalls: 0, okCalls: 0, failedCalls: 0, refunds: 0, blocked: 0, grossCents: 0, sellerCents: 0, vendCents: 0, refundedCents: 0 }
-  for (const { type, data = {} } of events) {
-    if (type === 'call.paid') (stats.paidCalls++, (stats.grossCents += cents(data.amountUsd || 0)))
-    else if (type === 'call.ok') (stats.okCalls++, (stats.sellerCents += data.ledger?.sellerCents || 0), (stats.vendCents += data.ledger?.vendCents || 0))
-    else if (type === 'call.failed') stats.failedCalls++
-    else if (type === 'call.blocked') stats.blocked++
-    else if (type === 'call.refunded') (stats.refunds++, (stats.refundedCents += cents(data.amountUsd || 0)))
-  }
+const emptyStats = () => ({ paidCalls: 0, okCalls: 0, failedCalls: 0, refunds: 0, blocked: 0, grossCents: 0, sellerCents: 0, vendCents: 0, refundedCents: 0 })
+
+// Folds one event into running totals (mutates the accumulator it is given).
+function applyEvent(stats, { type, data = {} }) {
+  if (type === 'call.paid') (stats.paidCalls++, (stats.grossCents += cents(data.amountUsd || 0)))
+  else if (type === 'call.ok') (stats.okCalls++, (stats.sellerCents += data.ledger?.sellerCents || 0), (stats.vendCents += data.ledger?.vendCents || 0))
+  else if (type === 'call.failed') stats.failedCalls++
+  else if (type === 'call.blocked') stats.blocked++
+  else if (type === 'call.refunded') (stats.refunds++, (stats.refundedCents += cents(data.amountUsd || 0)))
   return stats
 }
 
-// ponytail: re-reads the whole events log per request; fine for a demo, keep running totals if it grows.
+export const computeStats = (events) => events.reduce(applyEvent, emptyStats())
+
 function readAllEvents() {
   const file = path.join(process.env.VEND_DATA_DIR || 'data', 'events.jsonl')
   if (!fs.existsSync(file)) return []
@@ -112,10 +143,23 @@ function readAllEvents() {
   })
 }
 
-function streamEvents(req, res) {
+// Reads events.jsonl once, then keeps stats and the SSE backlog current from the event bus.
+function createHistory() {
+  const events = readAllEvents()
+  const stats = computeStats(events)
+  const tail = events.slice(-SSE_BACKLOG)
+  subscribe((event) => {
+    applyEvent(stats, event)
+    tail.push(event)
+    if (tail.length > SSE_BACKLOG) tail.shift()
+  })
+  return { stats: () => ({ ...stats }), tail: () => [...tail] }
+}
+
+function streamEvents(history, req, res) {
   res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive', 'x-accel-buffering': 'no' })
   const send = (event) => res.write(`data: ${JSON.stringify(event)}\n\n`)
-  readAllEvents().slice(-SSE_BACKLOG).forEach(send) // from disk so history survives restarts
+  history.tail().forEach(send)
   const unsubscribe = subscribe(send)
   const heartbeat = setInterval(() => res.write(': ping\n\n'), SSE_HEARTBEAT_MS)
   req.on('close', () => {
@@ -136,39 +180,57 @@ export function validateSubmission(body) {
 }
 
 function isAdmin(req, adminToken) {
-  if (!adminToken) return true
   const digest = (s) => crypto.createHash('sha256').update(String(s)).digest()
   return crypto.timingSafeEqual(digest(req.headers['x-vend-admin'] || ''), digest(adminToken))
 }
 
-function defaultRunner() {
-  const useLocal = process.env.VEND_RUNNER === 'local' || (!process.env.VEND_RUNNER && !process.env.CREATEOS_SANDBOX_API_KEY)
-  return useLocal ? createLocalRunner() : createCreateosRunner()
+// Seller code only ever runs on the host when VEND_RUNNER=local is set explicitly.
+function makeDefaultRunner(runnerMode) {
+  return runnerMode === 'local' ? createLocalRunner() : createCreateosRunner()
+}
+
+// Returns [status, error] when builds must be refused, else null.
+function buildRefusal(req, { runnerMode, sandboxKey, adminToken }) {
+  const isLocal = runnerMode === 'local'
+  if (!isLocal && !adminToken) return [403, 'builds disabled: set VEND_ADMIN_TOKEN']
+  if (adminToken && !isAdmin(req, adminToken)) return [401, 'admin token required (x-vend-admin)']
+  if (!isLocal && !sandboxKey) return [503, 'builds disabled: CREATEOS_SANDBOX_API_KEY is not set (VEND_RUNNER=local only for local dev)']
+  return null
 }
 
 async function runBuild(jobId, submission, { packageTool, makeRunner }) {
   const { name, description = '', code } = submission
   const priceUsd = Number(submission.priceUsd)
-  const onLog = (line) => emit('build.log', { jobId, name, line: String(line) })
+  // Sandbox URLs stay private: buyers must go through the gateway.
+  const onLog = (line) => emit('build.log', { jobId, name, line: String(line).replace(URL_PATTERN, '[hidden]') })
+  const runner = makeRunner()
+  let result
   try {
-    const result = await packageTool({ name, description, code, priceUsd }, { onLog, runner: makeRunner() })
-    if (!result.testsPassed || !result.upstreamUrl) {
-      emit('build.done', { jobId, name, ok: false, attempts: result.attempts, error: 'tests did not pass' })
-      return
-    }
-    const inputSchema = result.inputSchema || { type: 'object' }
-    const tool = registerTool({ name, description, priceUsd, upstreamUrl: result.upstreamUrl, sandboxId: result.sandboxId, inputSchema })
-    emit('build.done', { jobId, name, ok: true, attempts: result.attempts, toolId: tool.id, path: `/t/${tool.id}` })
+    result = await packageTool({ name, description, code, priceUsd }, { onLog, runner })
   } catch (err) {
     console.error('[server] build failed', err)
-    emit('build.done', { jobId, name, ok: false, error: String(err.message || err).slice(0, 300) })
+    emit('build.done', { jobId, name, ok: false, error: String(err.message || err).replace(URL_PATTERN, '[hidden]').slice(0, 300) })
+    return
+  }
+  if (!result.testsPassed || !result.upstreamUrl) {
+    emit('build.done', { jobId, name, ok: false, attempts: result.attempts, error: 'tests did not pass' })
+    return
+  }
+  try {
+    const tool = registerTool({ name, description, priceUsd, upstreamUrl: result.upstreamUrl, sandboxId: result.sandboxId, inputSchema: sanitizeSchema(result.inputSchema) })
+    emit('build.done', { jobId, name, ok: true, attempts: result.attempts, toolId: tool.id, path: `/t/${tool.id}` })
+  } catch (err) {
+    console.error('[server] register failed; releasing sandbox', err)
+    await runner.destroy?.().catch((e) => console.error('[server] sandbox release failed', e))
+    emit('build.done', { jobId, name, ok: false, error: 'could not register the tool' })
   }
 }
 
-function createBuildHandler({ packageTool, makeRunner, adminToken }) {
+function createBuildHandler({ packageTool, makeRunner, ...guard }) {
   let running = null
   return async function submitTool(req, res) {
-    if (!isAdmin(req, adminToken)) return sendJson(res, 401, { ok: false, error: 'admin token required (x-vend-admin)' })
+    const refusal = buildRefusal(req, guard)
+    if (refusal) return sendJson(res, refusal[0], { ok: false, error: refusal[1] })
     const body = await readJsonBody(req, MAX_API_BODY_BYTES)
     const invalid = validateSubmission(body)
     if (invalid) return sendJson(res, 400, { ok: false, error: invalid })
@@ -197,13 +259,21 @@ function serveStatic(req, res) {
   fs.createReadStream(file).pipe(res)
 }
 
-export function createApp({ gateway, packageTool = realPackageTool, makeRunner = defaultRunner, adminToken = process.env.VEND_ADMIN_TOKEN } = {}) {
+export function createApp({
+  gateway,
+  packageTool = realPackageTool,
+  runnerMode = process.env.VEND_RUNNER,
+  sandboxKey = process.env.CREATEOS_SANDBOX_API_KEY,
+  makeRunner = () => makeDefaultRunner(runnerMode),
+  adminToken = process.env.VEND_ADMIN_TOKEN,
+} = {}) {
   const pay = gateway || createGateway({ stripeSecretKey: process.env.STRIPE_SECRET_KEY, networkId: process.env.STRIPE_PROFILE_ID })
-  const submitTool = createBuildHandler({ packageTool, makeRunner, adminToken })
+  const submitTool = createBuildHandler({ packageTool, makeRunner, runnerMode, sandboxKey, adminToken })
+  const history = createHistory()
   const routes = {
-    'GET /api/tools': (req, res) => sendJson(res, 200, listTools().map((t) => publicTool(t, originOf(req)))),
-    'GET /api/stats': (req, res) => sendJson(res, 200, computeStats(readAllEvents())),
-    'GET /api/events': streamEvents,
+    'GET /api/tools': (req, res) => sendJson(res, 200, liveTools(listTools()).map((t) => publicTool(t, originOf(req)))),
+    'GET /api/stats': (req, res) => sendJson(res, 200, history.stats()),
+    'GET /api/events': (req, res) => streamEvents(history, req, res),
     'GET /api/example': (req, res) => res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }).end(fs.readFileSync(EXAMPLE_TOOL, 'utf8')),
     'GET /healthz': (req, res) => sendJson(res, 200, { ok: true }),
     'POST /api/tools': submitTool,

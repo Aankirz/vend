@@ -6,7 +6,7 @@ import path from 'node:path'
 import http from 'node:http'
 
 process.env.VEND_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'vend-app-'))
-const { createApp, computeStats, exampleInput } = await import('../src/server.js')
+const { createApp, computeStats, exampleInput, sanitizeSchema, liveTools } = await import('../src/server.js')
 const { recent } = await import('../src/events.js')
 const { getTool } = await import('../src/registry.js')
 
@@ -15,7 +15,7 @@ const servers = []
 after(() => servers.forEach((s) => s.close()))
 
 async function start(options) {
-  const server = http.createServer(createApp({ gateway: noGateway, makeRunner: () => ({}), ...options }))
+  const server = http.createServer(createApp({ gateway: noGateway, runnerMode: 'local', makeRunner: () => ({}), ...options }))
   await new Promise((r) => server.listen(0, r))
   servers.push(server)
   return `http://localhost:${server.address().port}`
@@ -96,4 +96,76 @@ test('exampleInput prefers schema examples, then typed placeholders', () => {
   assert.deepEqual(exampleInput({ required: ['a', 'b'], properties: { a: { type: 'string', examples: ['x'] }, b: { type: 'integer' } } }), { a: 'x', b: 1 })
   const chart = { properties: { data: { type: 'array', items: { type: 'object', required: ['label', 'value'], properties: { label: { type: 'string' }, value: { type: 'number' } } } } } }
   assert.deepEqual(exampleInput(chart), { data: [{ label: 'hello', value: 1 }] })
+})
+
+test('#1 no silent local fallback: without VEND_RUNNER=local a missing sandbox key refuses builds', async () => {
+  const base = await start({ runnerMode: undefined, sandboxKey: '', adminToken: 't', makeRunner: undefined, packageTool: async () => assert.fail('must not build') })
+  const res = await post(base, submission, { 'x-vend-admin': 't' })
+  assert.equal(res.status, 503)
+  assert.match((await res.json()).error, /CREATEOS_SANDBOX_API_KEY/)
+})
+
+test('#2 builds are refused (403) when VEND_ADMIN_TOKEN is unset outside local mode', async () => {
+  const base = await start({ runnerMode: 'createos', sandboxKey: 'skp_x', adminToken: '', packageTool: async () => assert.fail('must not build') })
+  const res = await post(base, submission)
+  assert.equal(res.status, 403)
+  assert.match((await res.json()).error, /VEND_ADMIN_TOKEN/)
+})
+
+async function buildOnce(packageTool, makeRunner = () => ({})) {
+  const base = await start({ adminToken: '', packageTool, makeRunner })
+  const { jobId } = await (await post(base, submission)).json()
+  for (let i = 0; i < 50 && !recent(50).some((e) => e.type === 'build.done' && e.data.jobId === jobId); i++) await new Promise((r) => setTimeout(r, 10))
+  return recent(50).filter((e) => e.data?.jobId === jobId)
+}
+
+test('#3 sandbox URLs are stripped from the build log', async () => {
+  const events = await buildOnce(async (t, { onLog }) => {
+    onLog('live at https://abc-8080.app.sb.createos.sh/x')
+    return { testsPassed: false, attempts: 1 }
+  })
+  const line = events.find((e) => e.type === 'build.log').data.line
+  assert.equal(line, 'live at [hidden]')
+})
+
+test('#4 malformed LLM schemas are replaced and never break /api/tools', async () => {
+  assert.deepEqual(sanitizeSchema({ type: 'object', required: 'text' }), { type: 'object' })
+  assert.deepEqual(sanitizeSchema({ properties: [] }), { type: 'object' })
+  assert.deepEqual(sanitizeSchema({ properties: { a: { type: 'string', examples: ['x'.repeat(20000)] } } }), { type: 'object' })
+  assert.deepEqual(sanitizeSchema(null), { type: 'object' })
+  const ok = { type: 'object', required: ['a'], properties: { a: { type: 'string' } } }
+  assert.equal(sanitizeSchema(ok), ok)
+  assert.deepEqual(exampleInput({ properties: { a: { type: 'array', items: { get type() { throw new Error('boom') } } } } }), {})
+})
+
+test('#5 only the newest tool per sandbox is listed', () => {
+  const tools = [
+    { id: 'old', sandboxId: 'sb1', createdAt: '2026-10-18T01:00:00Z' },
+    { id: 'new', sandboxId: 'sb1', createdAt: '2026-10-18T02:00:00Z' },
+    { id: 'other', sandboxId: 'sb2', createdAt: '2026-10-18T00:00:00Z' },
+    { id: 'seed', sandboxId: null, createdAt: '2026-10-17T00:00:00Z' },
+  ]
+  assert.deepEqual(liveTools(tools).map((t) => t.id), ['new', 'other', 'seed'])
+})
+
+test('#8 a registration failure after packaging releases the sandbox', async () => {
+  let destroyed = 0
+  const events = await buildOnce(
+    async () => ({ testsPassed: true, attempts: 1, upstreamUrl: 'file:///not-http', sandboxId: 'sb_9' }),
+    () => ({ destroy: async () => destroyed++ }),
+  )
+  const done = events.find((e) => e.type === 'build.done')
+  assert.equal(done.data.ok, false)
+  assert.equal(destroyed, 1)
+})
+
+test('#6 /api/stats stays current from the event bus without re-reading the log', async () => {
+  const { emit } = await import('../src/events.js')
+  const base = await start({ adminToken: '' })
+  const before = await (await fetch(`${base}/api/stats`)).json()
+  emit('call.paid', { amountUsd: 0.5 })
+  emit('call.ok', { ledger: { sellerCents: 45, vendCents: 5 } })
+  const after = await (await fetch(`${base}/api/stats`)).json()
+  assert.equal(after.paidCalls - before.paidCalls, 1)
+  assert.equal(after.sellerCents - before.sellerCents, 45)
 })

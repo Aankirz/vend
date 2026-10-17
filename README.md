@@ -87,7 +87,26 @@ node scripts/buyer.js http://localhost:8080/t/<id> '{"data":[{"label":"Jul","val
 MPPX_STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY npx mppx http://localhost:8080/t/<id> -J '{...}' -M paymentMethod=pm_card_visa -i
 ```
 
-Other entry points: `node src/gateway/dev.js` (gateway + fake tool only), `node scripts/package.js examples/broken_tool.py --local` (packager CLI).
+Other entry points: `node src/gateway/dev.js` (gateway + fake tool only), `node scripts/package.js examples/broken_tool.py --local` (packager CLI; `--reuse <sandboxId>` rebuilds into an existing CreateOS sandbox instead of creating one).
+
+For local builds without a sandbox, start with `VEND_RUNNER=local npm start`. Seller code then runs on your machine, so only do this with code you trust. Without `VEND_RUNNER=local`, the server never falls back to the host: builds are refused until `CREATEOS_SANDBOX_API_KEY` and `VEND_ADMIN_TOKEN` are set.
+
+## Deploy (CreateOS)
+
+The app runs on the CreateOS app platform; the full runbook is in [`docs/phases/deploy-owner.md`](docs/phases/deploy-owner.md). The Stripe Projects key authenticates the CLI, so no browser login is needed:
+
+```bash
+export CREATEOS_PROJECT_API_KEY="$(grep '^CREATEOS_PROJECT_API_KEY=' .env | cut -d= -f2-)"
+createos projects add --name "Vend" --unique-name vend-gateway --type upload --runtime node:20 \
+  --port 8080 --install-command "npm install --omit=dev" --build-command "node --version" \
+  --run-command "node src/server.js"          # or --runtime dockerfile (repo Dockerfile)
+grep -E '^(STRIPE_SECRET_KEY|AI_GATEWAY_API_KEY|CREATEOS_SANDBOX_API_KEY)=' .env > .env.createos
+echo "VEND_ADMIN_TOKEN=$(openssl rand -hex 16)" >> .env.createos   # required for public builds
+createos env push --file .env.createos --force && rm .env.createos
+createos deploy                               # prints "Live at: https://…"
+```
+
+Secrets go in through `createos env`, never git. `.env*` and `data/` are excluded from the upload.
 
 ### Environment variables
 
@@ -97,8 +116,8 @@ Other entry points: `node src/gateway/dev.js` (gateway + fake tool only), `node 
 | `STRIPE_PROFILE_ID` | optional Stripe profile id advertised as `networkId` in challenges |
 | `AI_GATEWAY_API_KEY`, `VEND_MODEL` | LLM for the packaging agent (Vercel AI Gateway) |
 | `CREATEOS_SANDBOX_API_KEY` | CreateOS sandboxes for packaging/serving tools |
-| `VEND_RUNNER` | `createos` or `local` (default: createos when the key is set) |
-| `VEND_ADMIN_TOKEN` | if set, `POST /api/tools` requires `x-vend-admin: <token>` (buying stays open) |
+| `VEND_RUNNER` | `createos` (default) or `local`. `local` runs seller code **on the host**: local dev only, must be set explicitly |
+| `VEND_ADMIN_TOKEN` | **required for builds** outside local mode: `POST /api/tools` needs `x-vend-admin: <token>`, and builds are refused (403) when it is unset. Buying stays open |
 | `VEND_SEED_TOOL_URL` | optional upstream URL; registers the demo `chart` tool at startup |
 | `VEND_PUBLIC_URL` | optional public origin used in buyer snippets |
 | `PORT`, `VEND_DATA_DIR`, `VEND_PYTHON` | server port (8080), data dir (`./data`), python for the local runner |
@@ -131,6 +150,6 @@ Other entry points: `node src/gateway/dev.js` (gateway + fake tool only), `node 
 ## Honest limits
 
 - **Stripe test mode only.** Payments use test cards via test-helper SPTs; no real money moves.
-- **One sandbox on the free CreateOS plan:** one build at a time, and every tool shares the single sandbox. A new build replaces the previously served tool.
+- **One live tool at a time on the free CreateOS plan:** there is one sandbox and one build at a time. A new build replaces the tool that sandbox was serving, and `/api/tools` lists only the newest tool per sandbox.
 - **Python tools only.** The input schema check is a minimal subset (required keys + top-level types).
 - **Not durable:** `data/` (tool registry, event log) is a JSON file plus JSONL and may reset on redeploy.

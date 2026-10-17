@@ -46,3 +46,7 @@
 
 ## 2026-10-18 — Dockerfile deploy fallback
 - Added Dockerfile + .dockerignore (node:20-slim, npm ci --omit=dev, excludes .env/data); smoke-tested locally.
+
+## 2026-10-18 — Phase 3 review round 1 fixes
+- server: no silent local-runner fallback (VEND_RUNNER=local must be explicit, else sandbox key required → 503); builds refused (403) without VEND_ADMIN_TOKEN outside local mode; sandbox URLs stripped from build log; LLM schemas sanitized and exampleInput cannot 500; /api/tools lists newest tool per sandbox; stats + SSE backlog cached in memory from the event bus; sandbox released if registration fails.
+- README: Deploy section, admin-token requirement, one live tool per sandbox, --reuse; .env.example comments; regression tests.
