@@ -25,3 +25,6 @@ Per `docs/phases/CONTRACT.md`.
 
 ## Add-on (coordinator): social link preview
 When the owner posts the live URL on X/LinkedIn, it must unfurl into a card. Add to both pages: `<meta property="og:title|og:description|og:image|og:url">` and `twitter:card=summary_large_image`, with `og:image` = absolute URL `https://production-vend-gateway.tyzo.nodeops.app/og.png`. Make `public/og.png` (1200×630) by rendering a small HTML card in Vend's style (headline "Make your agent tool pay for itself.", the 402 → pay → 200 terminal motif, "Stripe Projects × CreateOS") with headless Chrome — no external image service. Keep it under 300 KB.
+
+## Add-on 2 (coordinator): "Try a paid call" button
+Another builder is adding `POST /api/try/:toolId` (see docs/phases/phase-5-try-it.md for the response shape: steps request → 402 → paid → result, plus `{"evil":true}` for BLOCKED). On `/` next to each live tool, add **Try a paid call** and **Try a malicious call** buttons that animate those steps (402 badge, paid pi_…, then the chart image from base64 — or ⛔ BLOCKED · refunded), handle 429 gracefully, and keep everything via textContent / `img.src = 'data:image/png;base64,' + result` (validate it's base64). This is the judges' hands-on moment: make it the most delightful interaction on the site. If the endpoint isn't merged yet, build against the documented shape and say so.
