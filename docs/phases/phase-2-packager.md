@@ -36,3 +36,10 @@ CONTRACT.md list. Key: `https://createos.sh/docs/llms.txt` (sandbox SDK, ingress
 
 ## Branch / OWNER NEEDED
 Per CONTRACT.md. Branch `build`, `git pull --rebase origin build` before push. Likely OWNER NEEDED: `CREATEOS_SANDBOX_API_KEY` (comes via Stripe Projects or the CreateOS dashboard) and an LLM key (`OPENROUTER_API_KEY` via Stripe Projects, or `ANTHROPIC_API_KEY`). Build and test everything you can with the local runner + stubbed LLM meanwhile.
+
+## Amendment A (coordinator, after plan fact-check) — overrides anything above
+1. **Egress lock bug:** an empty allowlist means **open** egress (SDK `setEgress(null|[])` = allow all; createos.sh/docs/Sandbox/REST-API/Egress.md). Lock = a **non-empty** dummy rule, e.g. `["192.0.2.1:9"]`, set **at create time** (check the SDK's create options) so LLM-written tests never run with the network open. devbox:1 already has matplotlib — no pip installs needed.
+2. **Free plan caps: 1 concurrent sandbox (paused ones count) and only ~10 creations per rolling 24h — 1 is already used.** Do all dev loops with the local runner. Real-sandbox runs: reuse one long-lived sandbox (`--reuse <id>`), create a new one only when unavoidable. Never leave orphans.
+3. **Auto-pause off** — ingress traffic does not count as activity, so a paused tool would break the demo.
+4. Demo "BLOCKED" moment: the example tool includes an optional code path that tries `urllib.request.urlopen("https://example.com")`; with egress locked it fails and the wrapper returns `{ok:false, error:"network blocked: ..."}`. Keep the error string prefix `network blocked:` — the gateway keys on it.
+5. Don't polish beyond the Done-when list. Ship, push, hand off.

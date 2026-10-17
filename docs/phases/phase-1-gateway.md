@@ -36,3 +36,10 @@ CONTRACT.md list. Key: `https://docs.stripe.com/payments/machine/mpp.md`, the ma
 
 ## Branch / OWNER NEEDED
 Per CONTRACT.md. Branch `build`, `git pull --rebase origin build` before push. Likely OWNER NEEDED: a Stripe **test** secret key in `.env` (owner can copy from dashboard.stripe.com/test/apikeys). Try `stripe config --list` / the Stripe CLI's own test key first if it is accessible without prompting.
+
+## Amendment A (coordinator, after plan fact-check) — overrides anything above
+1. **Buyer path = Stripe test-helper SPT**, not the Link wallet (this account has no Stripe business profile; Link needs a human login). Documented: `POST /v1/test_helpers/shared_payment/granted_tokens` with `pm_card_visa` (docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens.md). mppx's own CLI does this with test keys (`node_modules/mppx/dist/cli/plugins/stripe.js`). `scripts/buyer.js` must use this path; also document the one-liner `npx mppx <url> ...` equivalent if it works.
+2. Account is **US**, test mode. SPT minimum is **$0.50** — reject tool prices below that at registration.
+3. Refund: use the receipt reference (the PaymentIntent id) with `refunds.create({ payment_intent })`.
+4. **BLOCKED:** if the upstream returns `{ok:false}` with `error` starting `network blocked:`, emit `call.blocked` then refund (same refund path). 
+5. No Connect, no Link wallet work. Ledger split only. Don't polish beyond Done-when.
