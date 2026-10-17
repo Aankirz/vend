@@ -17,3 +17,7 @@
 - Added src/packager/ (llm.js via Vercel AI Gateway, local + CreateOS runners, index.js write→test→fix loop capped at 4, serve + /health wait).
 - Added examples/chart_tool.py, examples/broken_tool.py (returns bytes instead of base64 str), scripts/package.js CLI, test/packager.test.js (stubbed LLM, local runner).
 - .env.example: AI_GATEWAY_API_KEY, VEND_MODEL, CREATEOS_SANDBOX_API_KEY, VEND_AUTO_PAUSE_SECONDS, VEND_PYTHON.
+
+## 2026-10-18 — Phase 1 Amendment A: BLOCKED handling
+- Gateway emits call.blocked (instead of call.failed) when the tool reports `network blocked: ...`, then refunds via the same path; test added.
+- Documented the `npx mppx` CLI one-liner (test-helper SPT) in scripts/buyer.js.

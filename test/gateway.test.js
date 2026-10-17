@@ -45,7 +45,9 @@ before(async () => {
   upstream = await listen(async (req, res) => {
     for await (const _ of req);
     if (upstreamMode === 'http500') return res.writeHead(500).end('boom')
-    const body = upstreamMode === 'ok' ? { ok: true, result: 'HI' } : { ok: false, error: 'tool broke' }
+    const body = upstreamMode === 'ok' ? { ok: true, result: 'HI' }
+      : upstreamMode === 'blocked' ? { ok: false, error: 'network blocked: evil.example' }
+      : { ok: false, error: 'tool broke' }
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
   })
   tool = registerTool({
@@ -118,6 +120,15 @@ for (const mode of ['fail', 'http500']) {
     assert.match(logged, /"call.refunded"/)
   })
 }
+
+test('blocked egress emits call.blocked and refunds', async () => {
+  upstreamMode = 'blocked'
+  const payments = stubPayments()
+  const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+  assert.equal(res.status, 502)
+  assert.equal((await res.json()).refunded, true)
+  assert.deepEqual(recent(3).map((e) => e.type), ['call.paid', 'call.blocked', 'call.refunded'])
+})
 
 test('ledger split is 90/10 and sums to the price', () => {
   assert.deepEqual(ledgerSplit(1.25), { totalCents: 125, sellerCents: 112, vendCents: 13 })

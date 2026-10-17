@@ -7,6 +7,8 @@ import { validateInput } from './validate.js'
 const VEND_FEE_RATE = 0.1
 const UPSTREAM_TIMEOUT_MS = 30_000
 const MAX_BODY_BYTES = 1_000_000
+// Sandbox egress denials surface as {ok:false, error:'network blocked: ...'} from the tool.
+const BLOCKED_PREFIX = 'network blocked:'
 const ROUTE = /^\/t\/([^/?#]+)\/?(?:\?.*)?$/
 
 const json = (status, body) => Response.json(body, { status })
@@ -55,7 +57,7 @@ async function callUpstream(tool, input) {
 }
 
 async function refundFailedCall(payments, tool, paymentIntent, error) {
-  emit('call.failed', { toolId: tool.id, paymentIntent, error })
+  emit(error.startsWith(BLOCKED_PREFIX) ? 'call.blocked' : 'call.failed', { toolId: tool.id, paymentIntent, error })
   try {
     const refund = await payments.refund(paymentIntent)
     emit('call.refunded', { toolId: tool.id, paymentIntent, refundId: refund.id, amountUsd: tool.priceUsd })
