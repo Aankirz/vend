@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vend Product Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --surface:#fafafa; --card:#ffffff; --border:#e5e5e5; --muted:#737373; --text:#0a0a0a; --soft:#f4f4f5;
+  --accent:#635bff; --accent-soft:#eeedff; --green:#16a34a; --green-soft:#dcfce7; --red:#dc2626; --red-soft:#fee2e2;
+  --amber:#b45309; --amber-soft:#fef3c7; --blue:#2563eb; --blue-soft:#dbeafe; --pencil:#3f3f46; --note:#9a3412;
+  --radius:10px; --mono:"JetBrains Mono",ui-monospace,monospace; --hand:"Caveat",cursive;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0a0a0a; --surface:#111111; --card:#141414; --border:#262626; --muted:#a1a1aa; --text:#fafafa; --soft:#1c1c1f;
+  --accent:#8b85ff; --accent-soft:#1f1d3d; --green:#4ade80; --green-soft:#0f2a1a; --red:#f87171; --red-soft:#2d1212;
+  --amber:#fbbf24; --amber-soft:#2a2008; --blue:#60a5fa; --blue-soft:#0f1d33; --pencil:#d4d4d8; --note:#fdba74;
+}}
+:root[data-theme="dark"]{
+  --bg:#0a0a0a; --surface:#111111; --card:#141414; --border:#262626; --muted:#a1a1aa; --text:#fafafa; --soft:#1c1c1f;
+  --accent:#8b85ff; --accent-soft:#1f1d3d; --green:#4ade80; --green-soft:#0f2a1a; --red:#f87171; --red-soft:#2d1212;
+  --amber:#fbbf24; --amber-soft:#2a2008; --blue:#60a5fa; --blue-soft:#0f1d33; --pencil:#d4d4d8; --note:#fdba74;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px}
+nav.toc{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+nav.toc .wrap{display:flex;gap:18px;overflow-x:auto;padding-top:10px;padding-bottom:10px;white-space:nowrap;font-size:13px}
+nav.toc a{color:var(--muted);text-decoration:none} nav.toc a:hover{color:var(--text)}
+header.hero{padding:64px 0 32px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(34px,6vw,52px);line-height:1.05;letter-spacing:-.035em;margin:12px 0 14px;font-weight:700}
+h2{font-size:26px;letter-spacing:-.025em;margin:0 0 6px;font-weight:650}
+h3{font-size:17px;letter-spacing:-.01em;margin:22px 0 8px;font-weight:600}
+p.lede{font-size:18px;color:var(--muted);max-width:640px;margin:0}
+section{padding:44px 0;border-top:1px solid var(--border)}
+.sub{color:var(--muted);margin:0 0 22px;max-width:680px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{font:500 12px var(--mono);border:1px solid var(--border);background:var(--surface);padding:4px 10px;border-radius:999px}
+.chip.a{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.chip.r{background:var(--red-soft);border-color:transparent;color:var(--red)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.card h4{margin:0 0 6px;font-size:14px;font-weight:600}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .big{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text)}
+.callout{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:16px 0}
+.callout .ic{font-size:18px;line-height:1.4}
+.callout p{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 4px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);padding:8px 10px}
+td{border-bottom:1px solid var(--border);padding:10px;vertical-align:top}
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+.tbl table{margin:0} .tbl tr:last-child td{border-bottom:0}
+.badge{display:inline-block;font:500 11px var(--mono);padding:2px 8px;border-radius:6px;white-space:nowrap}
+.b-g{background:var(--green-soft);color:var(--green)} .b-r{background:var(--red-soft);color:var(--red)}
+.b-a{background:var(--amber-soft);color:var(--amber)} .b-b{background:var(--blue-soft);color:var(--blue)}
+.b-p{background:var(--accent-soft);color:var(--accent)} .b-n{background:var(--soft);color:var(--muted)}
+.hand{font-family:var(--hand);color:var(--note);font-size:22px;line-height:1.1}
+.sketch{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:10px;overflow-x:auto}
+.sketch svg{display:block;width:100%;min-width:640px;height:auto}
+.sketch text{font-family:var(--hand)}
+code,.mono{font-family:var(--mono);font-size:13px}
+code{background:var(--soft);padding:1px 6px;border-radius:5px}
+.meter{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.timeline{position:relative;padding-left:28px}
+.timeline:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.step{position:relative;margin-bottom:22px}
+.step:before{content:"";position:absolute;left:-26px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.step.dead:before{border-color:var(--red)}
+.step h4{margin:0 0 4px;font-size:15px}
+.step .meta{font:12px var(--mono);color:var(--muted)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.vs{grid-template-columns:1fr}}
+.vs .card.old{border-style:dashed;opacity:.85}
+.vs .card.new{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* mock UI */
+.window{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06)}
+.window .bar{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--surface);font:12px var(--mono);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.window .body{padding:16px}
+.field{border:1px solid var(--border);border-radius:8px;padding:10px 12px;font:12.5px/1.6 var(--mono);background:var(--surface);white-space:pre;overflow-x:auto}
+.btn{display:inline-block;background:var(--text);color:var(--bg);border-radius:8px;padding:8px 14px;font-weight:500;font-size:13px}
+.log{font:12.5px/1.9 var(--mono)}
+.log .ok{color:var(--green)} .log .bad{color:var(--red)} .log .info{color:var(--muted)} .log .acc{color:var(--accent)}
+.term{background:#0b0b0c;color:#e4e4e7;border-radius:12px;padding:14px 16px;font:12.5px/1.8 var(--mono);overflow-x:auto;white-space:pre}
+.term .p{color:#a78bfa} .term .g{color:#4ade80} .term .y{color:#fbbf24} .term .d{color:#71717a}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+ol.clean,ul.clean{padding-left:20px;margin:6px 0} ol.clean li,ul.clean li{margin:4px 0}
+footer{padding:40px 0 80px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+.score{font:600 13px var(--mono)}
+</style>
+</head>
+<body>
+
+<nav class="toc"><div class="wrap">
+  <a href="#tldr">TL;DR</a><a href="#journey">How we got here</a><a href="#how">How it works</a>
+  <a href="#sponsors">Stripe &amp; CreateOS</a><a href="#product">Product thinking</a><a href="#battle">Battle-test</a>
+  <a href="#better">What improved</a><a href="#final">Final product</a><a href="#demo">Demo</a><a href="#plan">Build plan</a>
+</div></nav>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">CreateOS × Stripe Projects Hackathon · Oct 17–18 2026</div>
+  <h1>Vend</h1>
+  <p class="lede"><b style="color:var(--text)">Make your agent tool pay for itself.</b> Paste a tool, and about 90 seconds later it's a verified, sandboxed, pay-per-call service that any AI agent can buy with Stripe. Callers pay only if it works.</p>
+  <div class="chips">
+    <span class="chip a">Repo: github.com/Aankirz/vend</span>
+    <span class="chip r">Submissions lock 06:00 IST</span>
+    <span class="chip">Prize: $2.5k + $2.5k credits (1st)</span>
+    <span class="chip">Budget OK: $10 CreateOS Beginner</span>
+  </div>
+</header>
+
+<!-- TLDR -->
+<section id="tldr">
+  <h2>TL;DR in 60 seconds</h2>
+  <p class="sub">If you read nothing else, read these four cards.</p>
+  <div class="grid g2">
+    <div class="card"><h4>😩 The problem</h4><p>Developers publish free tools for AI agents. Agents hammer them, the author pays the hosting bill and earns $0. Charging is hard: agents can't fill sign-up forms or checkout pages, and setting up servers, billing and security takes weeks.</p></div>
+    <div class="card"><h4>✨ The product</h4><p>Vend's AI agent wraps the tool, tests it in a sealed CreateOS computer, fixes its own bugs and publishes it behind a Stripe "pay first" toll gate. Any agent can now pay per call.</p></div>
+    <div class="card"><h4>🔒 The secret</h4><p>In agent commerce, <b>trust is the product</b>, not payments. Vend gives three guarantees: verified before going live, sealed while running, and no charge if the call fails.</p></div>
+    <div class="card"><h4>💰 Why sponsors love it</h4><p>Every Vend seller becomes a <b>new Stripe merchant</b> and a <b>new always-on CreateOS workload</b>. We bring both companies customers instead of reselling their product.</p></div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey">
+  <h2>How we got here</h2>
+  <p class="sub">The idea went through four versions. Each version was attacked, and only the parts that survived were kept.</p>
+  <div class="timeline">
+    <div class="step"><div class="meta">STEP 0 · RESEARCH</div><h4>Read the hackathon page, Luma, Discord and the 30 ideas</h4>
+      <p>We scored every idea: <span class="mono">3 × value to sponsors + 2 × demo appeal + 1 × ease</span> (max 30). Then we found the actual judging rules in Discord: sponsor-tool usage, the agent writing, running and fixing its own code, a real user, clear execution, creativity.</p></div>
+    <div class="step dead"><div class="meta">VERSION 1 · RunMeter · <span class="badge b-r">killed</span></div><h4>"Pay-per-run code runner": agents pay to run code in a sandbox</h4>
+      <p>Top score (28/30), but it failed self-questioning. The user was vague ("any agent"). It was CreateOS's own idea #22, so nothing creative. And it was <b>fatal</b>: it resold CreateOS sandboxes back to CreateOS. <span class="hand">"why wouldn't the agent just use CreateOS directly?"</span></p></div>
+    <div class="step"><div class="meta">VERSION 2 · Vend v1</div><h4>"Turn any function into a paid API for agents"</h4>
+      <p>Insight: nobody pays for raw compute, they pay for <b>what the code does</b>. So we sell people's useful code, not computers. That made it a two-sided product, sellers and buyers, and it grows the sponsors instead of competing with them.</p></div>
+    <div class="step"><div class="meta">VERSION 3 · Vend v2 · product books + competition check</div><h4>"Pay only if it works", with a narrow first user group</h4>
+      <p>The competition check showed Stripe already makes the paywall easy, so a paywall can't be our value. Ten product books pushed us to a narrow first user group (open-source agent-tool authors), an answer to the empty-marketplace problem, and a unique hook: <b>automatic refunds when a call fails</b>.</p></div>
+    <div class="step"><div class="meta">VERSION 4 · Vend v3 · sponsor docs + YC battle-test (current)</div><h4>"Make your agent tool pay for itself"</h4>
+      <p>Sponsor docs revealed three gifts: Stripe's <b>Link agent wallet</b> (real off-the-shelf agents can pay), <b>Connect</b> (automatic 90/10 seller split) and <b>Refunds</b> working with agent payments. The YC lens reframed the pain from "side income" (nice-to-have) to <b>"your free tool is costing you money"</b> (urgent).</p></div>
+  </div>
+
+  <h3>Scoreboard of the original 30 ideas (top 10)</h3>
+  <div class="tbl"><table>
+    <tr><th>Score</th><th>Idea</th><th>Why it didn't win</th></tr>
+    <tr><td class="score">28</td><td>Pay-per-run code runner</td><td>Became our starting point, then evolved into Vend</td></tr>
+    <tr><td class="score">27</td><td>Stripe webhook fixer</td><td>Listed first, so many teams will build it</td></tr>
+    <tr><td class="score">27</td><td>Code Mode for Stripe</td><td>Easy, but it's a tech demo with no real user</td></tr>
+    <tr><td class="score">27</td><td>Agent that sets up its own stack</td><td>Stripe login can't happen inside a sandbox, too risky in 5h</td></tr>
+    <tr><td class="score">26</td><td>Refund agent with guardrails</td><td>Absorbed into Vend as the auto-refund guarantee</td></tr>
+    <tr><td class="score">24</td><td>Stripe revenue analyst</td><td>Common "chat with your data" demo</td></tr>
+    <tr><td class="score">23</td><td>Client landing page</td><td>Small market, weak payment story</td></tr>
+    <tr><td class="score">22</td><td>Stack bake-off</td><td>Fun, no paying user</td></tr>
+    <tr><td class="score">21</td><td>Fork-and-race fixer</td><td>Great visual, no money story for Stripe</td></tr>
+    <tr><td class="score">≤20</td><td>Remaining 21 ideas</td><td>Weak sponsor fit, paid plan, or too big for one evening</td></tr>
+  </table></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <h2>How it works, end to end</h2>
+  <p class="sub">A pencil sketch of the whole system. Read it left to right: seller on top, buyer below, sponsors on the right.</p>
+  <div class="sketch">
+  <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vend architecture sketch">
+    <defs>
+      <filter id="pencil"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="currentColor" stroke-width="1.6"/></marker>
+    </defs>
+    <g filter="url(#pencil)" fill="none" stroke="var(--pencil)" stroke-width="1.7" style="color:var(--pencil)">
+      <!-- seller -->
+      <rect x="20" y="40" width="150" height="80" rx="12"/>
+      <!-- packaging agent -->
+      <rect x="250" y="30" width="190" height="100" rx="12"/>
+      <!-- createos box -->
+      <rect x="560" y="20" width="320" height="300" rx="16" stroke-dasharray="7 6"/>
+      <rect x="600" y="60" width="240" height="90" rx="10"/>
+      <rect x="600" y="200" width="240" height="90" rx="10"/>
+      <!-- gateway -->
+      <rect x="250" y="300" width="190" height="110" rx="12" stroke="var(--accent)" stroke-width="2.2"/>
+      <!-- buyer -->
+      <rect x="20" y="320" width="150" height="80" rx="12"/>
+      <!-- stripe -->
+      <rect x="560" y="380" width="320" height="110" rx="16" stroke-dasharray="7 6"/>
+      <!-- arrows -->
+      <path d="M170 80 L245 80" marker-end="url(#ar)"/>
+      <path d="M440 70 C520 70 540 100 595 100" marker-end="url(#ar)"/>
+      <path d="M598 125 C520 140 470 120 445 105" marker-end="url(#ar)" stroke-dasharray="4 4"/>
+      <path d="M720 150 L720 195" marker-end="url(#ar)"/>
+      <path d="M170 350 L245 350" marker-end="url(#ar)"/>
+      <path d="M245 380 L175 380" marker-end="url(#ar)"/>
+      <path d="M440 330 C520 320 540 260 595 250" marker-end="url(#ar)"/>
+      <path d="M440 390 C510 410 530 430 555 430" marker-end="url(#ar)"/>
+    </g>
+    <g fill="var(--text)" font-size="21">
+      <text x="45" y="75">Seller</text><text x="38" y="100" font-size="16" fill="var(--muted)">pastes tool + $0.50</text>
+      <text x="268" y="65">Packaging agent</text><text x="268" y="90" font-size="16" fill="var(--muted)">writes wrapper + tests</text><text x="268" y="112" font-size="16" fill="var(--muted)">fixes until green</text>
+      <text x="580" y="48" font-size="18" fill="var(--muted)">CreateOS (sealed micro-VMs)</text>
+      <text x="618" y="92">Build sandbox</text><text x="618" y="118" font-size="16" fill="var(--muted)">exec · upload · run tests</text>
+      <text x="618" y="232">Tool sandbox</text><text x="618" y="256" font-size="16" fill="var(--muted)">live URL · locked network</text><text x="618" y="278" font-size="16" fill="var(--muted)">sleeps when idle</text>
+      <text x="268" y="335" fill="var(--accent)">Vend gateway</text><text x="268" y="360" font-size="16" fill="var(--muted)">402 "pay $0.50"</text><text x="268" y="382" font-size="16" fill="var(--muted)">verify → forward</text><text x="268" y="402" font-size="16" fill="var(--muted)">fail → refund</text>
+      <text x="45" y="355">Buyer</text><text x="32" y="380" font-size="16" fill="var(--muted)">any AI agent, e.g.</text><text x="32" y="398" font-size="16" fill="var(--muted)">Claude Code + wallet</text>
+      <text x="580" y="408" font-size="18" fill="var(--muted)">Stripe</text>
+      <text x="600" y="438" font-size="16">MPP payment · Link wallet</text><text x="600" y="460" font-size="16">Connect 90/10 split · Refunds</text><text x="600" y="482" font-size="16">Stripe Projects (setup)</text>
+    </g>
+    <g class="hand" fill="var(--note)" font-size="19">
+      <text x="455" y="160">errors flow back ↺</text>
+      <text x="735" y="182">publish</text>
+      <text x="180" y="300">① ask  ② 402</text>
+      <text x="180" y="430">③ pay ④ result</text>
+      <text x="40" y="170">"90 seconds, zero servers"</text>
+      <text x="40" y="470">Stripe keys live ONLY here →</text>
+    </g>
+  </svg>
+  </div>
+
+  <h3>The six parts</h3>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Part</th><th>Plain meaning</th><th>Built with</th></tr>
+    <tr><td>1</td><td><b>Seller page</b></td><td>Web page: paste the tool, set a price, click "Vend it", watch the build log and earnings</td><td>One HTML page served by Vend</td></tr>
+    <tr><td>2</td><td><b>Packaging agent</b></td><td>AI that wraps the tool in a web server, writes tests, runs them, reads errors and fixes itself</td><td>Claude via OpenRouter (provisioned with Stripe Projects)</td></tr>
+    <tr><td>3</td><td><b>Tool sandbox</b></td><td>A sealed cloud computer where the tool lives, with a public address and locked internet</td><td>CreateOS ingress, egress, pause/resume</td></tr>
+    <tr><td>4</td><td><b>Vend gateway</b></td><td>The toll gate: no payment, no entry. Splits money 90/10. Refunds on failure</td><td>Node + <code>mppx</code> + Stripe Refunds/Connect</td></tr>
+    <tr><td>5</td><td><b>Buyer</b></td><td>A normal Claude Code with Stripe's agent wallet. We don't fake the customer</td><td>Link agent wallet (test mode)</td></tr>
+    <tr><td>6</td><td><b>Stack setup</b></td><td>One terminal command per service; keys land in a private file</td><td>Stripe Projects</td></tr>
+  </table></div>
+
+  <h3>Jargon decoder</h3>
+  <div class="grid g3">
+    <div class="card"><h4>Sandbox / micro-VM</h4><p>A tiny throwaway computer in the cloud. Like a sealed glass room: whatever happens inside stays inside.</p></div>
+    <div class="card"><h4>HTTP 402</h4><p>Websites reply with codes. 404 = "not found". 402 = "payment required". MPP makes 402 actually work.</p></div>
+    <div class="card"><h4>MPP</h4><p>Machine Payments Protocol. Stripe's 2026 standard that lets a program pay another program automatically.</p></div>
+    <div class="card"><h4>Ingress / Egress</h4><p>Ingress = who can come in (public URL). Egress = where code may go out (we allow almost nothing).</p></div>
+    <div class="card"><h4>Stripe Connect</h4><p>Stripe's marketplace system: money goes to the seller, and the platform keeps a cut automatically.</p></div>
+    <div class="card"><h4>Test mode</h4><p>Stripe's practice mode. Payments look real, but no money moves. Everything in the demo uses it.</p></div>
+  </div>
+</section>
+
+<!-- SPONSORS -->
+<section id="sponsors">
+  <h2>How well we use Stripe and CreateOS</h2>
+  <p class="sub">The judges' first criterion is <i>"meaningful use of Stripe Projects + CreateOS Sandbox (fork, egress control, live URL, desktop, pause/resume…)"</i>. This section is an honest audit: what we use, where it shows up in the demo, and what we skip.</p>
+
+  <div class="grid g2">
+    <div class="card"><h4>Stripe coverage</h4><div class="row"><span class="big">6 / 7</span><span class="badge b-p">strong</span></div><div class="meter"><i style="width:86%"></i></div><p style="margin-top:8px">Uses their newest products (MPP, Link agent wallet), not just a checkout button.</p></div>
+    <div class="card"><h4>CreateOS coverage</h4><div class="row"><span class="big">5 / 7</span><span class="badge b-p">strong</span></div><div class="meter"><i style="width:71%"></i></div><p style="margin-top:8px">Four of the five features the judges named, each with a visible moment in the demo.</p></div>
+  </div>
+
+  <h3>Stripe</h3>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th>Status</th><th>How Vend uses it</th><th>Seen in demo</th></tr>
+    <tr><td><b>Stripe Projects</b></td><td><span class="badge b-g">core</span></td><td>Sets up CreateOS and the AI provider from the terminal; keys go into <code>.env</code>. Mandatory for prizes.</td><td>0:20 setup shot</td></tr>
+    <tr><td><b>MPP (402 payments)</b></td><td><span class="badge b-g">core</span></td><td>The toll gate in front of every tool</td><td>Buyer hits 402, pays</td></tr>
+    <tr><td><b>Link agent wallet</b></td><td><span class="badge b-g">core</span></td><td>Lets an off-the-shelf Claude Code pay. Proves real buyers exist</td><td>Buyer scene</td></tr>
+    <tr><td><b>Refunds API</b></td><td><span class="badge b-g">core</span></td><td>"Pay only if it works": automatic refund on failed calls</td><td>Trust scene</td></tr>
+    <tr><td><b>Connect</b></td><td><span class="badge b-a">should</span></td><td>90% to the seller, 10% to Vend, automatically. The business model</td><td>Earnings split</td></tr>
+    <tr><td><b>Dashboard / reporting</b></td><td><span class="badge b-g">free</span></td><td>Every payment and refund appears in Stripe's own dashboard</td><td>Proof shot</td></tr>
+    <tr><td>Stablecoins / x402</td><td><span class="badge b-n">skip</span></td><td>Needs approval and country access; cards via MPP are enough</td><td>—</td></tr>
+  </table></div>
+
+  <h3>CreateOS Sandbox</h3>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th>Status</th><th>How Vend uses it</th><th>Seen in demo</th></tr>
+    <tr><td><b>Exec + file upload</b></td><td><span class="badge b-g">core</span></td><td>Packaging agent uploads code, runs tests, reads output and exit code</td><td>Build log</td></tr>
+    <tr><td><b>Live URL (ingress)</b></td><td><span class="badge b-g">core</span></td><td>Every vended tool gets a public HTTPS address</td><td>"Live at https://…"</td></tr>
+    <tr><td><b>Egress allowlist</b></td><td><span class="badge b-g">core</span></td><td>Tool can't reach the internet, so a malicious call can't leak data</td><td>BLOCKED moment</td></tr>
+    <tr><td><b>Pause / resume</b></td><td><span class="badge b-a">should</span></td><td>Tool sleeps when idle, so the seller pays nothing</td><td>"asleep · $0/hr"</td></tr>
+    <tr><td><b>Fresh sandbox (micro-VM isolation)</b></td><td><span class="badge b-g">core</span></td><td>Each tool in its own kernel; strangers can't touch each other</td><td>Narration</td></tr>
+    <tr><td>Fork</td><td><span class="badge b-n">roadmap</span></td><td>Fresh forked copy per call. Said in the pitch, not built</td><td>Closing line</td></tr>
+    <tr><td>Desktop (Chrome)</td><td><span class="badge b-n">skip</span></td><td>Not relevant to the product, and forcing it in would look gimmicky</td><td>—</td></tr>
+  </table></div>
+
+  <div class="callout"><div class="ic">💡</div><p><b>The strategic point:</b> most teams will <i>use</i> the sponsors. Vend <i>grows</i> them. Each seller is a new Stripe merchant processing agent payments, and a new 24/7 CreateOS workload. That's the sentence the sponsor judges repeat to their bosses.</p></div>
+</section>
+
+<!-- PRODUCT -->
+<section id="product">
+  <h2>How well the product is thought out</h2>
+  <p class="sub">Who it's for, what job it does, and why it beats the alternatives.</p>
+
+  <div class="grid g2">
+    <div class="card"><h4>👤 First users (beachhead)</h4><p>Authors of open-source agent tools and MCP servers on GitHub. They exist today, in the thousands, and earn $0 while their tools get heavy agent traffic.</p></div>
+    <div class="card"><h4>🔥 Urgent pain</h4><p>"My free tool is costing me money." Hosting bills grow with agent usage, so authors shut tools down or stop maintaining them.</p></div>
+    <div class="card"><h4>🛠 Job to be done</h4><p><b>Seller:</b> "Make my tool pay for itself without becoming a billing engineer." <b>Buyer agent:</b> "Get a trustworthy result from a stranger without risk."</p></div>
+    <div class="card"><h4>📏 North-star metric</h4><p><b>Time to first paid call.</b> DIY takes weeks. Vend: under 2 minutes, shown live with a timer.</p></div>
+  </div>
+
+  <h3>Positioning against the alternatives</h3>
+  <div class="tbl"><table>
+    <tr><th>Alternative</th><th>What it is</th><th>Why Vend wins</th></tr>
+    <tr><td>Do it yourself (Stripe's MCP guide)</td><td>Stripe docs to add a paywall yourself</td><td>You still need a server, security and code changes. Vend is the one-click version</td></tr>
+    <tr><td>RapidAPI</td><td>API marketplace for humans</td><td>Buyers must sign up and manage keys; sellers must host. Not agent-native</td></tr>
+    <tr><td>Apify Store</td><td>Hosted tools sold per run (closest competitor)</td><td>Buyers need accounts and subscriptions; no pay-per-call for agents, no refund guarantee</td></tr>
+    <tr><td>API gateways (Zuplo etc.)</td><td>Paywalls for existing APIs</td><td>Only for companies that already run servers</td></tr>
+  </table></div>
+  <div class="callout"><div class="ic">🎯</div><p><b>Positioning line:</b> "Stripe made charging agents a one-prompt job. Vend does the rest: hosting, safety, proof."</p></div>
+
+  <h3>The three trust guarantees (our "secret")</h3>
+  <div class="grid g3">
+    <div class="card"><h4><span class="badge b-g">✅ Verified</span></h4><p>Tests pass in a sandbox <i>before</i> the tool goes live. The agent fixed its own bugs to get there.</p></div>
+    <div class="card"><h4><span class="badge b-b">🔒 Sealed</span></h4><p>Tool runs in its own micro-VM with the network locked. Malicious input can't leak anything.</p></div>
+    <div class="card"><h4><span class="badge b-p">↩ No result, no charge</span></h4><p>If the call fails, the gateway refunds automatically. None of the 100+ services on MPP today does this.</p></div>
+  </div>
+
+  <h3>Business model</h3>
+  <p>10% of every payment, collected through Stripe Connect. One $0.50 call = <b>$0.45 to the seller</b>, <b>$0.05 to Vend</b>. This is <b>built into the MVP</b>, not just a slide (falls back to a ledger if Connect isn't available on an Indian account).</p>
+</section>
+
+<!-- BATTLE TEST -->
+<section id="battle">
+  <h2>How we battle-tested it</h2>
+  <p class="sub">Three rounds: (1) ten product books, (2) a check of competitors and sponsor docs, (3) a YC partner's interrogation.</p>
+
+  <h3>Round 1: ten product books</h3>
+  <div class="tbl"><table>
+    <tr><th>Book</th><th>Core lesson</th><th>What it changed in Vend</th></tr>
+    <tr><td><b>Inspired</b> · Cagan</td><td>Check 4 risks: value, usability, feasibility, viability</td><td>Value was the weakest risk, so we added demand evidence and a narrow first user group</td></tr>
+    <tr><td><b>The Mom Test</b> · Fitzpatrick</td><td>Trust what people already do, not what they say</td><td>Dropped the imaginary user; target authors already publishing agent tools on GitHub</td></tr>
+    <tr><td><b>Crossing the Chasm</b> · Moore</td><td>Win one narrow first group</td><td>"Any developer" → "open-source agent-tool authors"</td></tr>
+    <tr><td><b>The Cold Start Problem</b> · Chen</td><td>Marketplaces die with no buyers and no sellers</td><td>Buyers already exist (every agent); demo uses a real Claude Code; 3 tools pre-loaded</td></tr>
+    <tr><td><b>Competing Against Luck</b> · Christensen</td><td>What job is the customer hiring you for?</td><td>Buyer's job = "trustworthy result, no risk", which led to the refund guarantee</td></tr>
+    <tr><td><b>Zero to One</b> · Thiel</td><td>Find a truth others miss; be 10x better</td><td>Truth: trust, not payments, is the bottleneck. 10x: weeks → 90 seconds</td></tr>
+    <tr><td><b>Obviously Awesome</b> · Dunford</td><td>Position against what customers use today</td><td>"We complete Stripe, not compete with it"</td></tr>
+    <tr><td><b>Working Backwards</b> · Amazon</td><td>Write the press release first</td><td>Headline: "Make your agent tool pay for itself"</td></tr>
+    <tr><td><b>Made to Stick</b> · Heath</td><td>Concrete, surprising, emotional</td><td>Chart appears on screen, timer shows 90s, earnings counter ticks up</td></tr>
+    <tr><td><b>Shape Up</b> · Basecamp</td><td>Fix the time, cut the scope</td><td>Must / should / roadmap list below; 5 hours is fixed</td></tr>
+  </table></div>
+
+  <h3>Round 2: the facts that changed the plan</h3>
+  <div class="grid g2">
+    <div class="card"><h4><span class="badge b-r">threat</span> Stripe already does paywalls</h4><p>Stripe offers a one-prompt way to charge agents and a "monetize your MCP server" guide. Paywall alone = no value, so we moved the value to hosting, safety and proof.</p></div>
+    <div class="card"><h4><span class="badge b-g">signal</span> Demand is real</h4><p>100+ services launched on MPP on day one, and a public GitHub request on Stripe's own repo asks for pay-per-call for agents (stripe/ai #347).</p></div>
+    <div class="card"><h4><span class="badge b-g">gift</span> Link agent wallet</h4><p>Off-the-shelf agents can pay in test mode, so the buyer in the demo is real.</p></div>
+    <div class="card"><h4><span class="badge b-a">limit</span> Free plan = 1 sandbox</h4><p>We need ~2, so the $10 Beginner plan is approved. Some agent payment features have country limits; that gets tested first.</p></div>
+  </div>
+
+  <h3>Round 3: the YC application</h3>
+  <div class="grid g2">
+    <div class="card"><h4>What are you making?</h4><p>Vend turns any agent tool into a paid service in 90 seconds. An AI packages, tests and fixes it in a sealed computer and publishes it. Any agent pays per call with Stripe, and only if it works.</p></div>
+    <div class="card"><h4>Who desperately needs it?</h4><p>Authors of free agent tools paying hosting bills for heavy agent traffic, with no way to charge customers who can't use checkout pages.</p></div>
+    <div class="card"><h4>Why now?</h4><p>2026: Stripe MPP launched (agents can pay), Link agent wallet (agents have wallets), cheap instant micro-VMs (strangers' code can run safely). None existed 12 months ago.</p></div>
+    <div class="card"><h4>What do you know that others don't?</h4><p>Payments are solved. Trust between strangers' code isn't. Agents will buy from strangers only if the code is verified, sealed and refund-backed.</p></div>
+  </div>
+
+  <h3>The objection drill</h3>
+  <div class="tbl"><table>
+    <tr><th>Partner says</th><th>We answer</th><th>Holds?</th></tr>
+    <tr><td>"API marketplaces are a tarpit."</td><td>They died on human buyer friction. Agents discover and pay in one request with zero sign-up, so the economics changed.</td><td><span class="badge b-g">yes</span></td></tr>
+    <tr><td>"Is agent demand real?"</td><td>100+ MPP launch services plus a public request on Stripe's repo. Honest: it's early, which is why owning supply now matters.</td><td><span class="badge b-a">mostly</span></td></tr>
+    <tr><td>"Why won't Stripe build it?"</td><td>Stripe sells payments, not code execution. Stripe Projects shows they partner with providers. Vend is that partner.</td><td><span class="badge b-g">yes</span></td></tr>
+    <tr><td>"Why pay instead of the agent writing it?"</td><td>Same reason you call an API: data, tuned logic, or abilities the agent lacks (it can't render a chart in plain text).</td><td><span class="badge b-g">yes</span></td></tr>
+    <tr><td>"What's your metric?"</td><td>Time to first paid call: weeks → under 2 minutes.</td><td><span class="badge b-g">yes</span></td></tr>
+    <tr><td>"Do things that don't scale?"</td><td>Personally onboard the first 10 popular open-source tool authors from GitHub.</td><td><span class="badge b-g">yes</span></td></tr>
+  </table></div>
+</section>
+
+<!-- BETTER -->
+<section id="better">
+  <h2>How it got better</h2>
+  <p class="sub">The first idea next to the current one.</p>
+  <div class="vs">
+    <div class="card old"><div class="eyebrow">Version 1 · RunMeter</div>
+      <ul class="clean"><li>User: "any agent" (vague)</li><li>Sells compute (CreateOS's own business)</li><li>Copy of their listed idea #22</li><li>Demo output: a line of text</li><li>Fake buyer we write ourselves</li><li>No business model</li><li>3 sandbox features + MPP</li></ul></div>
+    <div class="card new"><div class="eyebrow">Version 4 · Vend</div>
+      <ul class="clean"><li>User: open-source agent-tool authors (real, urgent pain)</li><li>Sells people's tools; grows both sponsors</li><li>Two-sided, agent-native marketplace</li><li>Demo output: chart + money ticking + refunds</li><li>Real off-the-shelf Claude Code buyer</li><li>10% take rate via Connect, built in</li><li>5 sandbox features + 6 Stripe features</li></ul></div>
+  </div>
+
+  <h3>Against the judges' criteria</h3>
+  <div class="tbl"><table>
+    <tr><th>Judging criterion</th><th>RunMeter</th><th>Vend</th></tr>
+    <tr><td>Sponsor tools</td><td><span class="badge b-a">ok</span></td><td><span class="badge b-g">strong</span> grows both businesses</td></tr>
+    <tr><td>Writes, runs, fixes its own code</td><td><span class="badge b-a">ok</span></td><td><span class="badge b-g">strong</span> visible fix loop</td></tr>
+    <tr><td>Real user, real problem</td><td><span class="badge b-r">weak</span></td><td><span class="badge b-g">strong</span></td></tr>
+    <tr><td>Execution / demo clarity</td><td><span class="badge b-a">ok</span></td><td><span class="badge b-g">strong</span> chart, money, refund</td></tr>
+    <tr><td>Creativity</td><td><span class="badge b-r">weak</span></td><td><span class="badge b-g">strong</span> refund guarantee</td></tr>
+  </table></div>
+</section>
+
+<!-- FINAL -->
+<section id="final">
+  <h2>What the final product looks like</h2>
+  <p class="sub">Mockups of the three screens the judges will see. The real build will match these closely.</p>
+
+  <h3>Screen 1: Seller page (the "Vend it" moment)</h3>
+  <div class="window">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; vend · new tool</div>
+    <div class="body">
+      <div class="grid g2">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Your tool (Python)</div>
+<div class="field">def make_chart(labels, values, title):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.bar(labels, values)
+    ax.set_title(title)
+    fig.savefig("out.png")
+    return "out.png"</div>
+          <div class="row" style="margin-top:12px"><span class="mono">Price per call: <b>$0.50</b></span><span class="btn">Vend it →</span></div>
+        </div>
+        <div class="log">
+          <div class="info">00:03  writing wrapper + 4 tests…</div>
+          <div class="info">00:11  sandbox sb-7f2 created (devbox:1)</div>
+          <div class="bad">00:19  ✗ test_empty_values: ZeroDivisionError</div>
+          <div class="acc">00:24  agent: handling empty input, retrying</div>
+          <div class="ok">00:41  ✓ 4/4 tests passed</div>
+          <div class="info">00:47  network locked · egress: none</div>
+          <div class="ok">00:58  ✅ VERIFIED · live</div>
+          <div class="acc">https://vend.dev/t/make-chart</div>
+          <div class="hand" style="margin-top:6px">← judges watch the agent fix its own bug</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Screen 2: The buyer (a normal Claude Code)</h3>
+<div class="term"><span class="p">you ›</span> Chart my Q3 revenue: Jul 12k, Aug 15k, Sep 19k
+<span class="d">● Found tool "make-chart" on Vend ($0.50/call, ✅ verified)</span>
+<span class="d">● POST /t/make-chart</span>  →  <span class="y">402 Payment Required · $0.50</span>
+<span class="d">● Link wallet: shared payment token issued (test mode)</span>
+<span class="d">● POST /t/make-chart + payment</span>  →  <span class="g">200 OK · receipt rcpt_9Q…</span>
+<span class="g">✓ Saved q3-revenue.png</span>   <span class="d">[chart opens on screen]</span></div>
+
+  <h3>Screen 3: Earnings and trust log</h3>
+  <div class="window">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; vend · make-chart · earnings</div>
+    <div class="body">
+      <div class="grid g3" style="margin-bottom:14px">
+        <div class="card"><p>Your earnings</p><div class="big">$1.35</div></div>
+        <div class="card"><p>Paid calls</p><div class="big">3</div></div>
+        <div class="card"><p>Sandbox</p><div class="big" style="font-size:18px">😴 asleep · $0/hr</div></div>
+      </div>
+      <div class="tbl"><table>
+        <tr><th>Time</th><th>Caller</th><th>Event</th><th>Money</th></tr>
+        <tr><td class="mono">01:12</td><td>claude-code</td><td><span class="badge b-g">paid · ok</span></td><td>+$0.45 you · +$0.05 Vend</td></tr>
+        <tr><td class="mono">01:13</td><td>claude-code</td><td><span class="badge b-g">paid · ok</span></td><td>+$0.45 you · +$0.05 Vend</td></tr>
+        <tr><td class="mono">01:15</td><td>unknown-agent</td><td><span class="badge b-r">BLOCKED</span> tried to reach evil.example</td><td>call failed → refunded</td></tr>
+        <tr><td class="mono">01:16</td><td>claude-code</td><td><span class="badge b-a">failed</span> bad input</td><td><span class="badge b-p">↩ $0.50 refunded</span></td></tr>
+        <tr><td class="mono">01:17</td><td>claude-code</td><td><span class="badge b-g">paid · ok</span></td><td>+$0.45 you · +$0.05 Vend</td></tr>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <h2>The 2–3 minute demo video</h2>
+  <p class="sub">Requirements: at least one person on camera, problem → how it works → live agent writing and running code → how we used Stripe Projects and CreateOS.</p>
+  <div class="tbl"><table>
+    <tr><th>Time</th><th>On screen</th><th>You say</th></tr>
+    <tr><td class="mono">0:00</td><td>🎥 You on camera</td><td>"Developers publish free tools for AI agents. Agents hammer them, the author pays the bill, and agents can't use checkout pages. Vend makes any agent tool pay for itself."</td></tr>
+    <tr><td class="mono">0:20</td><td>Terminal: <code>stripe projects add createos/project</code></td><td>"Our whole stack came from Stripe Projects."</td></tr>
+    <tr><td class="mono">0:35</td><td>Screen 1: paste, $0.50, Vend it</td><td>"Vend's agent writes the wrapper and tests, runs them in a CreateOS sandbox… a test fails… it fixes itself… verified, live in under a minute."</td></tr>
+    <tr><td class="mono">1:20</td><td>Screen 2: plain Claude Code</td><td>"This is a normal Claude Code with Stripe's agent wallet. It hits our 402, pays fifty cents, gets the chart."</td></tr>
+    <tr><td class="mono">1:55</td><td>Screen 3: BLOCKED + refund</td><td>"Every tool is sealed: this call tried to leak data and got blocked. When a call fails, the agent is refunded automatically. Agents only pay for results."</td></tr>
+    <tr><td class="mono">2:15</td><td>Stripe dashboard</td><td>"Real Stripe payments in test mode, split 90/10 with Connect. The sandbox is now asleep, costing nothing."</td></tr>
+    <tr><td class="mono">2:25</td><td>🎥 You on camera</td><td>"Every Vend seller is a new Stripe merchant and a new CreateOS workload. We're building the supply side of agent commerce."</td></tr>
+  </table></div>
+</section>
+
+<!-- PLAN -->
+<section id="plan">
+  <h2>Build plan, scope and risks</h2>
+
+  <h3>Scope (fixed 5 hours)</h3>
+  <div class="grid g3">
+    <div class="card"><h4><span class="badge b-g">must</span></h4><ul class="clean"><li>Seller flow + sandbox verify/fix loop + live URL</li><li>MPP toll gate + real Claude Code buyer</li><li>Build log + earnings dashboard</li></ul></div>
+    <div class="card"><h4><span class="badge b-a">should</span></h4><ul class="clean"><li>Auto-refund on failure</li><li>Connect 90/10 split</li><li>BLOCKED moment, sleep when idle</li></ul></div>
+    <div class="card"><h4><span class="badge b-n">roadmap (pitch only)</span></h4><ul class="clean"><li>Forked sandbox per call</li><li>Public tool directory</li><li>Vend in the Stripe Projects catalog</li></ul></div>
+  </div>
+
+  <h3>Timeline (IST)</h3>
+  <div class="tbl"><table>
+    <tr><th>Time</th><th>Step</th><th>Done when</th></tr>
+    <tr><td class="mono">01:15–01:45</td><td>Risk tests: Stripe Projects, live URL, MPP on your account, Link wallet</td><td>Each ✅ or swapped for its backup</td></tr>
+    <tr><td class="mono">01:45–03:15</td><td>Packaging agent</td><td>Chart tool live in under 2 min</td></tr>
+    <tr><td class="mono">03:15–04:15</td><td>Gateway: 402, verify, forward, refund</td><td>Buyer gets chart; Stripe shows payment</td></tr>
+    <tr><td class="mono">04:15–04:50</td><td>Seller page polish</td><td>Whole demo on one screen</td></tr>
+    <tr><td class="mono">04:50–05:20</td><td>README + video (you on camera)</td><td>Video uploaded</td></tr>
+    <tr><td class="mono">05:20–05:50</td><td>Post, form, leaderboard (<code>CreateOS-2026</code>)</td><td>Submitted before 06:00</td></tr>
+  </table></div>
+
+  <h3>Backups, decided now</h3>
+  <div class="tbl"><table>
+    <tr><th>If this fails</th><th>We switch to</th><th>Story impact</th></tr>
+    <tr><td>MPP on an Indian Stripe account</td><td>402 + Stripe Payment Link per call</td><td><span class="badge b-a">small</span></td></tr>
+    <tr><td>Link wallet in Claude Code</td><td>40-line buyer script using the <code>mppx</code> client</td><td><span class="badge b-a">small</span></td></tr>
+    <tr><td>Connect (India restrictions)</td><td>Ledger showing the 90/10 split</td><td><span class="badge b-g">tiny</span></td></tr>
+    <tr><td>Sandbox limit</td><td>$10 Beginner plan (approved)</td><td><span class="badge b-g">none</span></td></tr>
+    <tr><td>Live URL flaky</td><td>Gateway calls the tool via sandbox <code>exec</code></td><td><span class="badge b-g">none</span></td></tr>
+  </table></div>
+
+  <h3>Submission checklist</h3>
+  <ul class="clean">
+    <li>☐ 2–3 min video on YouTube/Loom/Drive, viewable, <b>you on camera</b></li>
+    <li>☐ Public GitHub repo with README (what, how to run, tech). <b>No .env</b></li>
+    <li>☐ Team name, members + Discord handles, project name, description</li>
+    <li>☐ Public X/LinkedIn post tagging @createosai / CreateOS</li>
+    <li>☐ Form link (posted in Discord #announcements before 5:30 PM PT)</li>
+    <li>☐ projects.dev/leaderboard with code <code>CreateOS-2026</code></li>
+  </ul>
+</section>
+</div>
+
+<footer><div class="wrap">Vend · plan v4 · written 2026-10-18 01:20 IST · local file, not published.</div></footer>
+</body>
+</html>

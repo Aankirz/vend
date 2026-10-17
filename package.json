@@ -1,0 +1,30 @@
+{
+  "name": "vend",
+  "version": "1.0.0",
+  "description": "Make your agent tool pay for itself. Any tool becomes a verified, sandboxed, pay-per-call service AI agents can buy with Stripe.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aankirz/vend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aankirz/vend/issues"
+  },
+  "homepage": "https://github.com/Aankirz/vend#readme",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "@nodeops-createos/sandbox": "^0.8.2",
+    "mppx": "^0.13.5",
+    "stripe": "^23.0.0"
+  }
+}
