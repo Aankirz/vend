@@ -50,3 +50,10 @@
 ## 2026-10-18 — Phase 3 review round 1 fixes
 - server: no silent local-runner fallback (VEND_RUNNER=local must be explicit, else sandbox key required → 503); builds refused (403) without VEND_ADMIN_TOKEN outside local mode; sandbox URLs stripped from build log; LLM schemas sanitized and exampleInput cannot 500; /api/tools lists newest tool per sandbox; stats + SSE backlog cached in memory from the event bus; sandbox released if registration fails.
 - README: Deploy section, admin-token requirement, one live tool per sandbox, --reuse; .env.example comments; regression tests.
+
+## 2026-10-18 — Packager review round 1 fixes
+- Public log says `live ✅` without the upstream URL (it bypassed the paid gateway).
+- Unverified egress lock (`lockNetwork() === false`) throws `egress lock not verified`; local runner returns null (no egress control).
+- Runners gained `release()`; failure paths (incl. create failure, now inside try) release instead of destroying the scarce CreateOS VM.
+- Local runner children get only PATH + PYTHONDONTWRITEBYTECODE; requirement names single-quoted; llm.js sets max_tokens.
+- Tests: lock-not-verified, setup failure, release-not-destroy, env isolation, no URL in log.

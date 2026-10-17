@@ -34,7 +34,8 @@ export function createLocalRunner({ python = process.env.VEND_PYTHON || 'python3
     async create() {
       await ensureVenv(python);
       dir = await mkdtemp(join(tmpdir(), 'vend-'));
-      env = { ...process.env, PATH: `${join(VENV_DIR, 'bin')}:${process.env.PATH}`, PYTHONDONTWRITEBYTECODE: '1' };
+      // Seller code must never see our secrets: children get PATH and nothing else from this process.
+      env = { PATH: `${join(VENV_DIR, 'bin')}:${process.env.PATH}`, PYTHONDONTWRITEBYTECODE: '1' };
     },
     async writeFile(path, content) {
       const full = join(dir, path);
@@ -53,7 +54,8 @@ export function createLocalRunner({ python = process.env.VEND_PYTHON || 'python3
       server = spawn(cmd, { shell: true, cwd: dir, env: { ...env, PORT: String(port) }, stdio: 'ignore' });
       return `http://127.0.0.1:${port}`;
     },
-    async lockNetwork() { return false; }, // no egress control locally
+    async lockNetwork() { return null; }, // no egress control locally
+    release() { return this.destroy(); }, // nothing scarce to keep locally
     async destroy() {
       server?.kill();
       if (dir) await rm(dir, { recursive: true, force: true });

@@ -8,6 +8,7 @@ const NAME_PREFIX = 'vend-';
 const EXEC_TIMEOUT_MS = 180_000;
 // A non-empty allowlist is deny-by-default; this TEST-NET-1 address routes nowhere, so nothing passes.
 const LOCKED_EGRESS = ['192.0.2.1:9'];
+const CLEAN_CMD = `pkill -f '[p]ython3 server.py'; rm -rf ${WORKDIR}; mkdir -p ${WORKDIR}`;
 const PROBE_CMD = 'curl -sS -m 5 -o /dev/null https://example.com';
 
 function requireKey(apiKey) {
@@ -46,7 +47,7 @@ export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API
       sandbox = await findReusable(client, reuseId);
       if (sandbox) {
         await sandbox.setEgress(LOCKED_EGRESS);
-        await run(`pkill -f '[p]ython3 server.py'; rm -rf ${WORKDIR}; mkdir -p ${WORKDIR}`);
+        await run(CLEAN_CMD);
         return;
       }
       await destroyVendSandboxes({ apiKey });
@@ -72,6 +73,10 @@ export function createCreateosRunner({ apiKey = process.env.CREATEOS_SANDBOX_API
         await new Promise((r) => setTimeout(r, 2000)); // hostname policy needs a moment to propagate
       }
       return false;
+    },
+    // Keep the VM (creations are scarce) but leave nothing of this tool running in it.
+    async release() {
+      if (sandbox) await run(CLEAN_CMD);
     },
     async destroy() {
       if (sandbox) await sandbox.destroy();

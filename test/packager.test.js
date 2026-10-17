@@ -71,9 +71,59 @@ test('fixes the seller bug on attempt 2, then serves /run', { skip }, async () =
     assert.equal(result.attempts, 2);
     assert.match(calls[1], /AssertionError/); // test output was sent back to the LLM
     assert.ok(logs.some((l) => l.startsWith('test failed:')) && logs.includes('fixing') && logs.includes('✅ 3/3 passed'));
+    assert.ok(logs.includes('live ✅'));
+    assert.ok(!logs.some((l) => l.includes(result.upstreamUrl)), 'public log must not leak the upstream URL');
     const res = await fetch(`${result.upstreamUrl}/run`, { method: 'POST', body: JSON.stringify({ a: 2, b: 5 }) });
     assert.deepEqual(await res.json(), { ok: true, result: 7 });
   } finally {
+    await runner.destroy();
+  }
+});
+
+// Fake runner: records calls; tests "pass" when the stubbed exec says so.
+function fakeRunner({ lock = true, failCreate = false, testsPass = true } = {}) {
+  const calls = [];
+  return {
+    calls,
+    id: 'sb-fake',
+    async create() { calls.push('create'); if (failCreate) throw new Error('quota'); },
+    async writeFile() {},
+    async exec() { return testsPass ? { exitCode: 0, stdout: '', stderr: 'Ran 3 tests\n\nOK' } : { exitCode: 1, stdout: '', stderr: 'Ran 3 tests\nFAILED (failures=1)' }; },
+    async startServer() { calls.push('start'); return 'http://127.0.0.1:1'; },
+    async lockNetwork() { return lock; },
+    async release() { calls.push('release'); },
+    async destroy() { calls.push('destroy'); },
+  };
+}
+
+test('unverified egress lock aborts before tests run and releases the sandbox', async () => {
+  const runner = fakeRunner({ lock: false });
+  await assert.rejects(packageTool({ name: 'add', code: FIXED_TOOL }, { runner, llm: stubLlm([reply()]).llm }), /egress lock not verified/);
+  assert.deepEqual(runner.calls, ['create', 'release']);
+});
+
+test('setup failure releases, never destroys', async () => {
+  const runner = fakeRunner({ failCreate: true });
+  await assert.rejects(packageTool({ name: 'add', code: FIXED_TOOL }, { runner, llm: stubLlm([reply()]).llm }), /quota/);
+  assert.deepEqual(runner.calls, ['create', 'release']);
+});
+
+test('failing tests release the reused sandbox instead of destroying it', async () => {
+  const runner = fakeRunner({ testsPass: false });
+  const result = await packageTool({ name: 'add', code: FIXED_TOOL }, { runner, llm: stubLlm([reply()]).llm, maxAttempts: 2 });
+  assert.equal(result.testsPassed, false);
+  assert.ok(runner.calls.includes('release') && !runner.calls.includes('destroy'));
+});
+
+test('local runner hides this process env from seller code', { skip }, async () => {
+  process.env.VEND_TEST_SECRET = 'sk_test_should_not_leak';
+  const runner = createLocalRunner();
+  await runner.create();
+  try {
+    const res = await runner.exec('python3 -c "import os; print(os.environ.get(\'VEND_TEST_SECRET\'))"');
+    assert.equal(res.stdout.trim(), 'None');
+  } finally {
+    delete process.env.VEND_TEST_SECRET;
     await runner.destroy();
   }
 });

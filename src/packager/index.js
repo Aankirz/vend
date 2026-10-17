@@ -62,12 +62,16 @@ async function installAndLock(runner, requirements, log) {
   const bad = reqs.filter((r) => !PIP_NAME.test(r));
   if (bad.length) throw new Error(`refusing suspicious requirement names: ${bad.join(', ')}`);
   // `pip show` is offline: skip the install when deps are already there (CreateOS devbox, locked egress).
-  if (reqs.length && (await runner.exec(`python3 -m pip show -q ${reqs.join(' ')}`)).exitCode !== 0) {
+  const quoted = reqs.map((r) => `'${r}'`).join(' '); // PIP_NAME already bars quotes; quoting is belt and braces
+  if (reqs.length && (await runner.exec(`python3 -m pip show -q ${quoted}`)).exitCode !== 0) {
     log(`installing ${reqs.join(', ')}`);
-    const res = await runner.exec(`python3 -m pip install -q ${reqs.join(' ')}`);
+    const res = await runner.exec(`python3 -m pip install -q ${quoted}`);
     if (res.exitCode !== 0) log(`pip install failed: ${res.stderr.trim().split('\n').pop()}`);
   }
-  if (await runner.lockNetwork()) log('network locked');
+  // lockNetwork(): true = verified locked, false = lock failed, null = runner has no egress control (local).
+  const locked = await runner.lockNetwork();
+  if (locked === false) throw new Error('egress lock not verified');
+  if (locked) log('network locked');
 }
 
 async function runTests(runner, testFile, log) {
@@ -118,24 +122,25 @@ async function waitForHealth(url) {
   throw new Error(`server did not answer ${url}/health within ${HEALTH_TIMEOUT_MS / 1000}s`);
 }
 
+// Failure paths release (kill server, wipe files) instead of destroying: a CreateOS VM costs one of ~10 daily creations.
 export async function packageTool(tool, { onLog = () => {}, runner = createLocalRunner(), llm = chatJson, maxAttempts = MAX_ATTEMPTS } = {}) {
   if (!tool?.name || !tool?.code) throw new Error('packageTool needs { name, code }');
   const log = (line) => onLog(line);
-  log('creating sandbox');
-  await runner.create();
   try {
+    log('creating sandbox');
+    await runner.create();
     const result = await testLoop(tool, { runner, llm, log, maxAttempts });
     if (!result.testsPassed) {
-      await runner.destroy();
+      await runner.release();
       return { upstreamUrl: null, sandboxId: null, ...result };
     }
     log('starting server');
     const upstreamUrl = await runner.startServer('python3 server.py', SERVER_PORT);
     await waitForHealth(upstreamUrl);
-    log(`live at ${upstreamUrl}`);
+    log('live ✅'); // never log the upstream URL: the log is public and the URL bypasses the paid gateway
     return { upstreamUrl, sandboxId: runner.id, ...result };
   } catch (err) {
-    await runner.destroy().catch(() => {});
+    await runner.release().catch(() => {});
     throw err;
   }
 }

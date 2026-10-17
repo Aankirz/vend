@@ -17,13 +17,15 @@ export function parseJson(text) {
 }
 
 const MAX_TRIES = 3;
+// Three source files plus the model's reasoning fit well inside this.
+const MAX_TOKENS = 16_000;
 const RETRY_DELAY_MS = 5000;
 
 async function postOnce(messages, apiKey, model) {
   const res = await fetch(GATEWAY_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, messages, response_format: { type: 'json_object' } }),
+    body: JSON.stringify({ model, messages, max_tokens: MAX_TOKENS, response_format: { type: 'json_object' } }),
     signal: AbortSignal.timeout(180_000),
   });
   return { status: res.status, ok: res.ok, text: await res.text() };
