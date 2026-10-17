@@ -45,6 +45,9 @@ before(async () => {
   upstream = await listen(async (req, res) => {
     for await (const _ of req);
     if (upstreamMode === 'http500') return res.writeHead(500).end('boom')
+    if (upstreamMode === 'blocked400') {
+      return res.writeHead(400, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: false, error: 'network blocked: x' }))
+    }
     if (upstreamMode === 'redirect') return res.writeHead(302, { location: 'http://169.254.169.254/' }).end()
     const body = upstreamMode === 'ok' ? { ok: true, result: 'HI' }
       : upstreamMode === 'blocked' ? { ok: false, error: 'network blocked: evil.example' }
@@ -208,6 +211,16 @@ test('registerTool rejects bad prices and non-http upstreams', () => {
     assert.throws(() => registerTool({ ...base, priceUsd: 1, upstreamUrl }), /upstreamUrl/)
   }
   assert.equal(registerTool({ ...base, priceUsd: 0.5 }).priceUsd, 0.5)
+})
+
+test('regression: HTTP 400 with a network-blocked JSON error emits call.blocked and refunds', async () => {
+  upstreamMode = 'blocked400'
+  const payments = stubPayments()
+  const res = await call(payments, tool.id, '{"text":"hi"}', { authorization: 'Payment x' })
+  assert.equal(res.status, 502)
+  assert.deepEqual(await res.json().then((b) => [b.error, b.refunded]), ['network blocked: x', true])
+  assert.deepEqual(recent(3).map((e) => e.type), ['call.paid', 'call.blocked', 'call.refunded'])
+  assert.deepEqual(payments.calls.refund, ['pi_stub_1'])
 })
 
 test('ledger split is 90/10 and sums to the price', () => {

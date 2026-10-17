@@ -77,11 +77,12 @@ async function callUpstream(tool, input) {
     })
     if (res.status >= 300 && res.status < 400) return { ok: false, error: `upstream redirected (HTTP ${res.status})` }
     const text = await readCapped(res, MAX_UPSTREAM_BYTES)
-    if (!res.ok) return { ok: false, error: `upstream HTTP ${res.status}` }
     let body = null
     try {
       body = JSON.parse(text)
     } catch {}
+    // Tools often signal failure with a 4xx/5xx *and* a JSON error (e.g. "network blocked: ..."); keep that message.
+    if (!res.ok) return { ok: false, error: typeof body?.error === 'string' ? toolError(body) : `upstream HTTP ${res.status}` }
     if (!body || typeof body !== 'object' || body.ok === false) return { ok: false, error: toolError(body) }
     return { ok: true, body }
   } catch (err) {

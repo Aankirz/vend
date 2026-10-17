@@ -62,3 +62,6 @@
 - Redesigned `public/index.html` (Narrative Workflow: 402 exchange hero, live ledger line, 3-stage graphite band) and `public/sell.html` (Workbench: form │ build log │ earnings in one 1440×900 screen) on a Cobalt OKLCH token set with light + dark.
 - Added step player, "Vend it" press/loading/success states and an earnings roll-up with a +delta; moved seller script to `public/sell.js`.
 - Fixed: BLOCKED stays sticky through its refund ("⛔ BLOCKED · refunded"); early build.log lines before the 202 are kept; SSE backlog replay triggers one coalesced `/api/stats` fetch instead of up to 50.
+
+## 2026-10-18 — Gateway: BLOCKED on non-2xx tool replies
+- callUpstream reads the JSON body before mapping non-2xx, so `network blocked:` errors from real tools (HTTP 400) emit call.blocked; regression test.
