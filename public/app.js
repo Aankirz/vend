@@ -59,13 +59,25 @@ export function toolCard(tool) {
   const snippets = buyerSnippets(tool).map(([label, text]) =>
     el('div', { class: 'snippet' }, el('span', { class: 'snippet-label' }, label), el('code', {}, text), copyButton(text)),
   )
+  const panel = el('div', { class: 'try-panel', hidden: '' })
+  const tryBtn = (label, evil) => {
+    const btn = el('button', { class: `btn btn-sm ${evil ? 'btn-evil' : 'btn-try'}`, type: 'button' }, label)
+    btn.addEventListener('click', async () => {
+      btn.disabled = true
+      const out = await runTry(panel, tool, { evil })
+      if (out.status === 429) return cooldown(btn, out.retryAfter, label)
+      btn.disabled = false
+    })
+    return btn
+  }
   return el('article', { class: 'tool' },
     el('div', { class: 'tool-head' },
       el('h3', { class: 'tool-name' }, tool.name),
       el('span', { class: 'price' }, `${usd(Math.round(Number(tool.priceUsd) * 100))} / call`),
       el('p', { class: 'tool-desc' }, tool.description || 'No description.'),
+      el('div', { class: 'tool-try' }, tryBtn('Try a paid call', false), tryBtn('Try a malicious call', true)),
     ),
-    el('div', { class: 'snippets' }, snippets),
+    el('div', { class: 'snippets' }, panel, snippets),
   )
 }
 
@@ -135,4 +147,85 @@ export function rollTo(node, value, format = count) {
   }
   requestAnimationFrame(frame)
   return true
+}
+
+/* ───────── Try it: Vend buys from its own gateway; the steps land one by one ───────── */
+const STEP_GAP_MS = 420
+const TICK_MS = 100
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/
+const MAX_IMAGE_CHARS = 3_000_000
+const DEFAULT_RETRY_S = 10
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, reducedMotion() ? 0 : ms))
+
+function stepRow(kind, label) {
+  const row = el('li', { class: 'try-step', 'data-kind': kind }, el('span', { class: 'try-dot', 'aria-hidden': 'true' }), el('span', { class: 'try-label' }, label))
+  return row
+}
+
+function resultNode(step) {
+  if (step.blocked) return el('p', { class: 'try-out is-blocked' }, `⛔ BLOCKED · ${step.refunded === false ? 'refund pending' : 'refunded'} — ${String(step.error).slice(0, 140)}`)
+  if (!step.ok) return el('p', { class: 'try-out is-failed' }, `✗ ${String(step.error || 'tool failed').slice(0, 140)} · ${step.refunded === false ? 'refund pending' : 'refunded'}`)
+  const raw = typeof step.result === 'string' ? step.result : step.result?.image ?? step.result?.png
+  if (typeof raw === 'string' && raw.length < MAX_IMAGE_CHARS && BASE64.test(raw)) {
+    return el('img', { class: 'try-img', src: `data:image/png;base64,${raw}`, alt: 'Chart returned by the paid call', width: '480', height: '320' })
+  }
+  return el('pre', { class: 'try-out' }, JSON.stringify(step.result, null, 2).slice(0, 600))
+}
+
+function describe(step) {
+  if (step.t === 'request') return ['req', 'POST sent, no payment attached']
+  if (step.t === '402') return ['402', `402 Payment Required · ${usd(Math.round((step.amountUsd || 0) * 100))}`]
+  if (step.t === 'paid') return ['paid', `paid · ${step.paymentIntent || 'receipt'}`]
+  if (step.blocked) return ['blocked', 'tool tried to reach the internet · blocked']
+  return step.ok ? ['ok', '200 OK · result delivered'] : ['failed', 'tool failed · buyer refunded']
+}
+
+// Renders into `panel` and resolves with the final step (or null on an HTTP error).
+export async function runTry(panel, tool, { evil = false, onStep = () => {} } = {}) {
+  const list = el('ol', { class: 'try-steps' })
+  const waiting = stepRow('active', 'calling the tool without paying…')
+  const clock = el('span', { class: 'try-clock' }, '0.0 s')
+  waiting.append(clock)
+  list.append(waiting)
+  panel.replaceChildren(list)
+  panel.hidden = false
+  const started = performance.now()
+  const timer = setInterval(() => { clock.textContent = `${((performance.now() - started) / 1000).toFixed(1)} s` }, TICK_MS)
+  let res, body
+  try {
+    res = await fetch(`/api/try/${encodeURIComponent(tool.id)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(evil ? { evil: true } : {}) })
+    body = await res.json().catch(() => ({}))
+  } catch (err) {
+    body = { error: `network error: ${err.message}` }
+  } finally {
+    clearInterval(timer)
+  }
+  if (!res?.ok) {
+    waiting.dataset.kind = 'failed'
+    waiting.querySelector('.try-label').textContent = res?.status === 429 ? body.error || 'Too many demo calls. Try again shortly.' : res?.status === 404 ? 'Try-it is not available on this server yet.' : body.error || `HTTP ${res?.status}`
+    return { status: res?.status ?? 0, retryAfter: Number(res?.headers.get('retry-after')) || DEFAULT_RETRY_S }
+  }
+  waiting.remove()
+  let last = null
+  for (const step of body.steps || []) {
+    const [kind, label] = describe(step)
+    list.append(stepRow(kind, label))
+    onStep(step)
+    last = step
+    if (step.t === 'result') list.after(resultNode(step))
+    await wait(STEP_GAP_MS)
+  }
+  return { status: 200, last }
+}
+
+// A button that counts down after a 429 instead of failing silently.
+export function cooldown(btn, seconds, label) {
+  btn.disabled = true
+  let left = seconds
+  const tick = () => {
+    if (left <= 0) return (btn.disabled = false, (btn.textContent = label))
+    btn.textContent = `Try again in ${left--} s`
+    setTimeout(tick, 1000)
+  }
+  tick()
 }

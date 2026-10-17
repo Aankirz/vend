@@ -76,3 +76,10 @@
 - Added `video/`, a self-contained Remotion 4.0.536 project: 40 s 1920×1080 beat-cut film + 1080×1920 vertical cut, snapcn components (block-wordmark, text-reveal, terminal-simulator, screen-recording, punch-lines, wordmark-cut).
 - Music generated in-repo by `video/music/make-track.mjs` (120 BPM PCM synth + macOS `say` chant "Vend it." ×6, "Pay per call." ×3, "Four oh two!"); beat map in `video/audiomap.json`, frames in `video/STORYBOARD.md`.
 - Footage captured from the live site (`video/scripts/capture.mjs`); real build log, buyer output and BLOCKED · refunded row on screen.
+
+## 2026-10-18 — phase 3c: redesign / around an isometric vending machine
+- New hero: hand-inked isometric vending machine (own SVG, pencil filter) that vends on load/click and on Try-it results; Try a paid / malicious call buttons on hero and every tool (POST /api/try/:id, steps land one by one, 429 countdown, base64 image validated).
+- Geist type, Stripe-indigo accent, shadows over borders, hover gated to fine pointers, 16px inputs on touch, theme-color per scheme.
+- Hairline figures (MIT, vendored at public/vendor/hairline.js) for Fig. 01–04, lazy-mounted via IntersectionObserver.
+- OG/Twitter card meta + public/og.png (1200×630, rendered from the same SVG).
+- break-ui fixes: grouped money/counts, capped long log lines, ledger split wraps, long totals step down a size, show-all for long tool lists, attempts pluralized.

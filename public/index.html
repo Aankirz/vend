@@ -4,10 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vend · make your agent tool pay for itself</title>
-  <meta name="description" content="Paste a tool. Vend verifies it in a sandbox and turns it into a pay-per-call service any AI agent can buy with Stripe. You keep 90%.">
+  <meta name="description" content="Paste a Python tool. Vend verifies it in a locked sandbox and sells it per call to any AI agent over HTTP 402 with Stripe. You keep 90%.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vend">
+  <meta property="og:title" content="Vend · make your agent tool pay for itself">
+  <meta property="og:description" content="Paste a Python tool. Vend verifies it in a locked CreateOS sandbox and sells it per call to any AI agent over HTTP 402 with Stripe. You keep 90%.">
+  <meta property="og:image" content="https://production-vend-gateway.tyzo.nodeops.app/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://production-vend-gateway.tyzo.nodeops.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vend · make your agent tool pay for itself">
+  <meta name="twitter:description" content="Paste a tool → verified in a locked sandbox → agents pay per call with Stripe. You keep 90%.">
+  <meta name="twitter:image" content="https://production-vend-gateway.tyzo.nodeops.app/og.png">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0c">
+  <meta name="color-scheme" content="light dark">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -15,115 +30,108 @@
     <div class="wrap">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">V</span>Vend</a>
       <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-link hide-sm" href="#how">How it works</a>
         <a class="nav-link hide-sm" href="#tools">Live tools</a>
-        <a class="nav-link hide-sm" href="/openapi.json">openapi.json</a>
-        <a class="btn btn-primary btn-sm" href="/sell">Vend a tool</a>
+        <a class="btn btn-sm" href="/sell">Vend a tool</a>
       </nav>
     </div>
   </header>
 
   <main>
-    <section class="hero wrap" aria-labelledby="hero-heading">
-      <div>
-        <h1 id="hero-heading">Make your agent tool <span class="signal">pay for itself.</span></h1>
-        <p class="lede">Paste a Python tool. Vend tests it in a locked sandbox, then sells it per call to any AI agent over HTTP&nbsp;402. <strong>You keep 90%.</strong> Calls that fail are refunded automatically.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="/sell">Vend a tool →</a>
-          <a class="text-link" href="#tools">See live tools</a>
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Stripe × CreateOS · test mode</p>
+          <h1 id="hero-heading">Make your agent tool pay for itself.</h1>
+          <p class="lede">Paste a Python tool. Vend proves it works in a locked sandbox, then sells it per call to any AI agent over HTTP&nbsp;402. <strong>You keep 90%.</strong> Calls that fail are refunded.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" type="button" id="try-paid">Try a paid call</button>
+            <button class="btn btn-lg" type="button" id="try-evil">Try a malicious call</button>
+          </div>
+          <p class="hero-hint">Watch a real agent payment land: 402 → Stripe test payment → result. <a class="text-link" href="/sell">Or vend your own tool →</a></p>
+          <div class="try-panel hero-try" id="hero-try" hidden aria-live="polite"></div>
         </div>
+        <figure class="hero-fig">
+          <svg class="vm" id="vm" viewBox="-292 -252 572 476" role="img" aria-labelledby="vm-title">
+            <title id="vm-title">An isometric vending machine: an agent drops a coin into the 402 slot, the tool runs in a padlocked sandbox, a receipt prints and a chart drops into the tray.</title>
+            <defs><filter id="ink" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.8"/></filter></defs>
+            <g filter="url(#ink)">
+<polygon class="plate" points="-47.6,-97.5 268.5,85.0 30.3,222.5 -285.8,40.0"/>
+<polygon class="shadow" points="0.0,-6.0 117.8,62.0 34.6,110.0 -83.1,42.0"/>
+<polygon class="cube-l" points="112.6,85.0 173.2,120.0 173.2,50.0 112.6,15.0"/><polygon class="cube-r" points="233.8,85.0 173.2,120.0 173.2,50.0 233.8,15.0"/><polygon class="cube-t" points="173.2,-20.0 233.8,15.0 173.2,50.0 112.6,15.0"/>
+<g transform="matrix(0.8660254 0.5 0 1 112.6 15.0)"><rect x="22" y="30" width="26" height="22" rx="3" class="lock"/><path class="shackle" d="M27 30 v-7 a8 8 0 0 1 16 0 v7"/><circle cx="35" cy="40" r="2.6" class="ink-dot"/><text x="8" y="66" class="t-cube">sandbox</text></g>
+<g transform="matrix(0.8660254 0.5 -0.8660254 0.5 173.2 -20.0)"><line x1="17.5" y1="0" x2="17.5" y2="70" class="hair"/><line x1="35.0" y1="0" x2="35.0" y2="70" class="hair"/><line x1="52.5" y1="0" x2="52.5" y2="70" class="hair"/></g>
+<path class="cable" d="M69.2,50.0 C99.2,80.0 99.9,65.0 129.9,45.0"/>
+<polygon class="m-l" points="-69.3,40.0 34.6,100.0 34.6,-120.0 -69.3,-180.0"/><polygon class="m-r" points="103.9,60.0 34.6,100.0 34.6,-120.0 103.9,-160.0"/><polygon class="m-t" points="0.0,-220.0 103.9,-160.0 34.6,-120.0 -69.3,-180.0"/>
+<polygon class="cap-l" points="-76.2,-180.0 34.6,-116.0 34.6,-124.0 -76.2,-188.0"/><polygon class="cap-r" points="110.9,-160.0 34.6,-116.0 34.6,-124.0 110.9,-168.0"/><polygon class="cap-t" points="0.0,-232.0 110.9,-168.0 34.6,-124.0 -76.2,-188.0"/>
+<g transform="matrix(0.8660254 0.5 0 1 -69.3 -180.0)"><rect x="0" y="8" width="120" height="22" class="band"/><text x="10" y="24" class="t-brand">VEND</text><text x="110" y="23" class="t-mini" text-anchor="end">agent tools</text><rect x="8" y="38" width="74" height="112" rx="3" class="glass"/><line x1="8" y1="71" x2="82" y2="71" class="shelf"/><line x1="8" y1="107" x2="82" y2="107" class="shelf"/><line x1="8" y1="143" x2="82" y2="143" class="shelf"/><line x1="18" y1="42" x2="34" y2="146" class="glare"/><line x1="26" y1="42" x2="38" y2="90" class="glare"/><g class="item vend-item" transform="translate(14 47)"><rect width="26" height="18" rx="2" class="it-a"/><rect x="5" y="10" width="4" height="6" class="bar"/><rect x="11" y="6" width="4" height="10" class="bar"/><rect x="17" y="3" width="4" height="13" class="bar"/></g><text x="27" y="70.5" class="t-tag">chart $0.50</text><g class="item" transform="translate(48 47)"><rect width="26" height="18" rx="2" class="it-b"/><line x1="5" y1="7" x2="19" y2="7" class="hair"/><line x1="5" y1="12" x2="15" y2="12" class="hair"/></g><text x="61" y="70.5" class="t-tag">pdf $1.00</text><g class="item" transform="translate(14 83)"><rect width="26" height="18" rx="2" class="it-c"/><line x1="5" y1="7" x2="19" y2="7" class="hair"/><line x1="5" y1="12" x2="15" y2="12" class="hair"/></g><text x="27" y="106.5" class="t-tag">ocr $0.75</text><g class="item" transform="translate(48 83)"><rect width="26" height="18" rx="2" class="it-b"/><line x1="5" y1="7" x2="19" y2="7" class="hair"/><line x1="5" y1="12" x2="15" y2="12" class="hair"/></g><text x="61" y="106.5" class="t-tag">shout $0.50</text><g class="item" transform="translate(14 119)"><rect width="26" height="18" rx="2" class="it-a"/><line x1="5" y1="7" x2="19" y2="7" class="hair"/><line x1="5" y1="12" x2="15" y2="12" class="hair"/></g><text x="27" y="142.5" class="t-tag">geo $2.00</text><g class="item" transform="translate(48 119)"><rect width="26" height="18" rx="2" class="it-c"/><line x1="5" y1="7" x2="19" y2="7" class="hair"/><line x1="5" y1="12" x2="15" y2="12" class="hair"/></g><text x="61" y="142.5" class="t-tag">sql $0.90</text><text x="100" y="45" class="t-402" text-anchor="middle">402</text><rect x="91" y="49" width="18" height="24" rx="2" class="slot-plate"/><line x1="100" y1="54" x2="100" y2="68" class="slot"/><circle cx="93" cy="84" r="2" class="key"/><circle cx="100" cy="84" r="2" class="key"/><circle cx="107" cy="84" r="2" class="key"/><circle cx="93" cy="91" r="2" class="key"/><circle cx="100" cy="91" r="2" class="key"/><circle cx="107" cy="91" r="2" class="key"/><circle cx="93" cy="98" r="2" class="key"/><circle cx="100" cy="98" r="2" class="key"/><circle cx="107" cy="98" r="2" class="key"/><line x1="90" y1="122" x2="110" y2="122" class="slot"/><g class="receipt"><rect x="92" y="122" width="16" height="34" class="paper"/><line x1="95" y1="130" x2="105" y2="130" class="hair"/><line x1="95" y1="136" x2="103" y2="136" class="hair"/><text x="100" y="148" class="t-paid" text-anchor="middle">paid</text></g><rect x="8" y="164" width="74" height="36" rx="3" class="tray"/><line x1="8" y1="172" x2="82" y2="172" class="flap"/></g>
+<g transform="matrix(0.8660254 -0.5 0 1 34.6 -120.0)"><g transform="translate(18 40)"><rect width="44" height="36" rx="4" class="sticker"/><rect x="15" y="15" width="14" height="12" rx="2" class="lock"/><path class="shackle-s" d="M18 15 v-4 a4 4 0 0 1 8 0 v4"/></g><line x1="20" y1="176" x2="60" y2="176" class="hair"/><line x1="20" y1="183" x2="60" y2="183" class="hair"/><line x1="20" y1="190" x2="60" y2="190" class="hair"/><line x1="20" y1="197" x2="60" y2="197" class="hair"/></g>
+<polygon class="bot-l" points="-215.6,29.5 -184.5,47.5 -184.5,1.5 -215.6,-16.5"/><polygon class="bot-r" points="-153.3,29.5 -184.5,47.5 -184.5,1.5 -153.3,-16.5"/><polygon class="bot-t" points="-184.5,-34.5 -153.3,-16.5 -184.5,1.5 -215.6,-16.5"/>
+<polygon class="bot-l" points="-210.4,-18.5 -184.5,-3.5 -184.5,-31.5 -210.4,-46.5"/><polygon class="bot-r" points="-158.5,-18.5 -184.5,-3.5 -184.5,-31.5 -158.5,-46.5"/><polygon class="bot-t" points="-184.5,-61.5 -158.5,-46.5 -184.5,-31.5 -210.4,-46.5"/>
+<g transform="matrix(0.8660254 0.5 0 1 -210.4 -46.5)"><circle cx="9" cy="12" r="2.6" class="eye"/><circle cx="21" cy="12" r="2.6" class="eye"/><path d="M9 20 q6 4 12 0" class="hair-ink"/></g>
+<line x1="-184.5" y1="-46.5" x2="-184.5" y2="-60.5" class="ink"/><circle cx="-184.5" cy="-63.5" r="3" class="eye"/>
+<path d="M-179.3,10.5 L-155.0,-3.5" class="arm"/>
+<g class="coin" style="--cx:172.3px;--cy:-68.5px"><ellipse cx="-155.0" cy="-9.5" rx="7" ry="7" class="coin-face"/><text x="-155.0" y="-7.0" class="t-coin" text-anchor="middle">$</text></g>
+<text x="93.9" y="-200.0" class="t-earn">+$0.45</text>
+            </g>
+            <g class="vm-notes" aria-hidden="true">
+              <path d="M178,-72 L176,-30" class="note-line"/><text x="118" y="-78" class="note">sandbox · network locked</text>
+              <path d="M-196,-96 L-170,-74" class="note-line"/><text x="-282" y="-102" class="note">agent pays per call</text>
+            </g>
+          </svg>
+          <figcaption><span class="fig-no">Fig. 00</span> The machine. A coin goes in (402), the tool runs locked in its sandbox, a receipt prints, the result drops. <span class="fig-hint hide-sm">Click it.</span></figcaption>
+        </figure>
       </div>
-
-      <figure class="exchange" aria-label="What an agent sees when it calls a Vend tool">
-        <figcaption><span>agent ⇄ vend</span><span>example: a $0.50 tool</span></figcaption>
-        <ol>
-          <li><span class="who">→</span><span><span class="k">POST</span> /t/chart {"title":"Revenue"}</span></li>
-          <li><span class="who">←</span><span class="warn">402 Payment Required · pay $0.50</span></li>
-          <li><span class="who">→</span><span class="dim">pays with a Stripe token, retries</span></li>
-          <li><span class="who">←</span><span><span class="ok">200 OK</span> chart.png</span></li>
-          <li><span class="who">$</span><span><span class="ok">seller +$0.45</span> <span class="dim">· vend +$0.05</span></span></li>
-        </ol>
-      </figure>
     </section>
 
     <section class="tally" aria-label="Live totals">
       <div class="wrap">
-        <span class="label"><span class="live-dot" aria-hidden="true"></span>Live, all tools</span>
+        <span class="label">Live, all tools</span>
         <dl>
           <div class="is-paid"><dt>earned by sellers</dt><dd id="c-seller">$0.00</dd></div>
           <div><dt>paid calls</dt><dd id="c-paid">0</dd></div>
           <div><dt>refunded</dt><dd id="c-refunds">0</dd></div>
-          <div><dt>blocked</dt><dd id="c-blocked">0</dd></div>
+          <div class="is-blocked"><dt>blocked</dt><dd id="c-blocked">0</dd></div>
         </dl>
+        <span class="sse-state" id="sse-state" role="status"></span>
       </div>
     </section>
 
-    <section class="stages" aria-labelledby="how-heading">
+    <section class="figs" id="how" aria-labelledby="how-heading">
       <div class="wrap">
-        <h2 id="how-heading">Three stages. About ninety seconds.</h2>
-        <p>No checkout page and no API keys to hand out. An agent gets a price, pays, and gets a result.</p>
-        <ol class="stage-list">
-          <li class="stage">
-            <span class="num">1.0 · PASTE</span>
-            <h3>Paste your tool</h3>
-            <p>Python code, a name, a price per call. That is the whole form.</p>
-          </li>
-          <li class="stage">
-            <span class="num">2.0 · VERIFY</span>
-            <h3>An agent proves it works</h3>
-            <p>It wraps your code in a server, writes tests, fixes what fails, then locks the sandbox network.</p>
-            <pre aria-label="Example build log">writing wrapper
-running 4 tests
-✗ test failed: KeyError 'value'
-fixing
-✓ 4/4 passed · network locked · live</pre>
-          </li>
-          <li class="stage">
-            <span class="num">3.0 · GET PAID</span>
-            <h3>Agents pay per call</h3>
-            <p>Unpaid calls get <code>402</code>. Paid calls run. Failures refund the buyer.</p>
-            <div class="split" aria-hidden="true"><span></span><span></span></div>
-            <div class="split-key"><span><b>90%</b> you</span><span>10% Vend</span></div>
-          </li>
+        <h2 id="how-heading">From pasted code to paid calls in about ninety seconds.</h2>
+        <ol class="fig-list">
+          <li class="fig-card"><div class="hl" data-fig="terminal" data-label="A terminal window: the build log"></div><p class="fig-cap"><span class="fig-no">Fig. 01</span> <b>Paste.</b> Python code, a name, a price. An agent wraps it in a server and writes the tests.</p></li>
+          <li class="fig-card"><div class="hl" data-fig="padlock" data-label="A padlock: the sandbox network is locked"></div><p class="fig-cap"><span class="fig-no">Fig. 02</span> <b>Verify.</b> Tests run in a CreateOS sandbox until green, then its network is locked.</p></li>
+          <li class="fig-card"><div class="hl" data-fig="slow" data-label="Crates riding a belt through a gate: the paid gateway"></div><p class="fig-cap"><span class="fig-no">Fig. 03</span> <b>Gate.</b> Unpaid calls get 402. Paid calls pass through on a Stripe payment.</p></li>
+          <li class="fig-card"><div class="hl" data-fig="plot" data-label="A bar chart: the result the agent bought"></div><p class="fig-cap"><span class="fig-no">Fig. 04</span> <b>Get paid.</b> The agent gets its result, you get 90%. Failures refund the buyer.</p></li>
         </ol>
+        <figure class="exchange" aria-label="What an agent sees when it calls a Vend tool">
+          <figcaption><span>agent ⇄ vend</span><span>a $0.50 tool</span></figcaption>
+          <ol>
+            <li><span class="who">→</span><span><span class="k">POST</span> /t/chart {"title":"Revenue"}</span></li>
+            <li><span class="who">←</span><span class="warn">402 Payment Required · pay $0.50</span></li>
+            <li><span class="who">→</span><span class="dim">pays with a Stripe token, retries</span></li>
+            <li><span class="who">←</span><span><span class="ok">200 OK</span> chart.png</span></li>
+            <li><span class="who">$</span><span><span class="ok">seller +$0.45</span> <span class="dim">· vend +$0.05</span></span></li>
+          </ol>
+        </figure>
       </div>
     </section>
 
     <section class="tools-section wrap" id="tools" aria-labelledby="tools-heading">
       <div class="section-head">
         <h2 id="tools-heading">Live tools</h2>
-        <p>Copy a snippet into any terminal or agent. Stripe test mode, so no real money moves.</p>
+        <p>Try one here, or copy a snippet into any terminal or agent. Stripe test mode: no real money moves.</p>
       </div>
       <div class="tools" id="tool-list" aria-busy="true"><div class="skeleton" aria-hidden="true"></div><span class="visually-hidden">Loading tools</span></div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="wrap"><p>Vend · built for CreateOS × Stripe Projects · Stripe test mode, no real money moves.</p></div>
+    <div class="wrap"><p>Vend · built for CreateOS × Stripe Projects · Stripe test mode, no real money moves.</p><p class="credits">Illustration style inspired by Colorfigures by April Zhu. Figures by <a href="https://hairline.lucasmarkes.com">hairline</a> (MIT).</p></div>
   </footer>
 
-  <script type="module">
-    import { coalesce, getJson, onEvents, renderTools, rollTo, usd } from '/app.js'
-
-    const $ = (id) => document.getElementById(id)
-    const list = $('tool-list')
-    async function refreshStats() {
-      try {
-        const s = await getJson('/api/stats')
-        rollTo($('c-seller'), s.sellerCents, usd)
-        rollTo($('c-paid'), s.paidCalls)
-        rollTo($('c-refunds'), s.refunds)
-        rollTo($('c-blocked'), s.blocked)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    const scheduleStats = coalesce(refreshStats)
-    refreshStats()
-    renderTools(list).then(() => list.removeAttribute('aria-busy'))
-    onEvents((event) => {
-      if (event.type.startsWith('call.')) scheduleStats()
-      if (event.type === 'build.done' && event.data?.ok) renderTools(list)
-    })
-  </script>
+  <script type="module" src="/home.js"></script>
 </body>
 </html>

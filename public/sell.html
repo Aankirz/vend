@@ -5,9 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vend a tool · Vend</title>
   <meta name="description" content="Paste a Python tool, watch it get verified in a sandbox, and see agent payments land.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vend">
+  <meta property="og:title" content="Vend · make your agent tool pay for itself">
+  <meta property="og:description" content="Paste a Python tool. Vend verifies it in a locked CreateOS sandbox and sells it per call to any AI agent over HTTP 402 with Stripe. You keep 90%.">
+  <meta property="og:image" content="https://production-vend-gateway.tyzo.nodeops.app/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://production-vend-gateway.tyzo.nodeops.app/sell">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vend · make your agent tool pay for itself">
+  <meta name="twitter:description" content="Paste a tool → verified in a locked sandbox → agents pay per call with Stripe. You keep 90%.">
+  <meta name="twitter:image" content="https://production-vend-gateway.tyzo.nodeops.app/og.png">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0c">
+  <meta name="color-scheme" content="light dark">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -25,7 +40,7 @@
     <section class="panel form-panel" aria-labelledby="form-heading">
       <div class="panel-head">
         <h2 id="form-heading">1 · Paste a tool</h2>
-        <button class="btn btn-sm btn-ghost" type="button" id="load-example">Load example</button>
+        <button class="btn btn-sm" type="button" id="load-example">Load example</button>
       </div>
       <form class="panel-body" id="sell-form" novalidate>
         <div class="field field-code">

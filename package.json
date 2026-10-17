@@ -24,6 +24,7 @@
   "type": "module",
   "private": "true",
   "dependencies": {
+    "@lucasmarkes/hairline": "^0.5.1",
     "@nodeops-createos/sandbox": "^0.8.2",
     "mppx": "^0.13.5",
     "stripe": "^23.0.0"
