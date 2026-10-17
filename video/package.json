@@ -1,0 +1,25 @@
+{
+  "name": "vend-launch-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "music": "node music/make-track.mjs",
+    "capture": "node scripts/capture.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "node music/make-track.mjs && remotion render src/index.ts VendLaunch out/vend-launch.mp4 --codec=h264 --audio-codec=aac --crf=20 && remotion still src/index.ts VendLaunch out/poster.png --frame=1100",
+    "render:vertical": "remotion render src/index.ts VendLaunchVertical out/vend-launch-vertical.mp4 --codec=h264 --audio-codec=aac --crf=22"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.536",
+    "@remotion/google-fonts": "4.0.536",
+    "culori": "4.0.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.536"
+  },
+  "devDependencies": {
+    "@types/culori": "4.0.1",
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

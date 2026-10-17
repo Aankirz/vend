@@ -71,3 +71,8 @@
 
 ## 2026-10-18 — Phase 5: Try a paid call API
 - POST /api/try/:toolId: Vend pays its own gateway with a test SPT (reuses scripts/buyer.js) and returns request → 402 → paid → result steps + receipt; {"evil":true} points the tool URL field outside to trigger BLOCKED → refund. Test-key only, per-IP 10 s + 30/h limits, 30 s timeout. src/demo-buyer.js, tests, README Try-it.
+
+## 2026-10-18 — Phase 4 launch music video (video/)
+- Added `video/`, a self-contained Remotion 4.0.536 project: 40 s 1920×1080 beat-cut film + 1080×1920 vertical cut, snapcn components (block-wordmark, text-reveal, terminal-simulator, screen-recording, punch-lines, wordmark-cut).
+- Music generated in-repo by `video/music/make-track.mjs` (120 BPM PCM synth + macOS `say` chant "Vend it." ×6, "Pay per call." ×3, "Four oh two!"); beat map in `video/audiomap.json`, frames in `video/STORYBOARD.md`.
+- Footage captured from the live site (`video/scripts/capture.mjs`); real build log, buyer output and BLOCKED · refunded row on screen.
