@@ -26,3 +26,9 @@ Server/API changes, new dependencies, React, images that need generation, copy r
 
 ## Gate / OWNER NEEDED
 `npm test`. OWNER NEEDED protocol per CONTRACT.md.
+
+## Also fix (from review round 1)
+- `public/sell.html:193-195`: a blocked call fires `call.paid` → `call.blocked` → `call.refunded`; the row ends as "refunded" and the demo's BLOCKED moment is lost. Keep `blocked` sticky and render "⛔ BLOCKED · refunded".
+- `sell.html:155-159`: an early `build.log` line can arrive before the 202 and gets cleared — don't clear lines for the current job.
+- `sell.html:213-219`: backlog replay fires up to 50 `/api/stats` requests — refresh stats once after replay.
+- For local test builds use `VEND_RUNNER=local` (do not create CreateOS sandboxes — quota).
