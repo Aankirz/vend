@@ -1,7 +1,7 @@
 // A terminal window that replays captured command output, keeping the real pacing (gaps capped).
 const MAX_GAP_S = 1.2
 const SAME_CHUNK_S = 0.03
-const MAX_COLS = 132
+const MAX_COLS = 96
 
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
 const clip = (s) => (s.length > MAX_COLS ? `${s.slice(0, MAX_COLS - 1)}…` : s)
@@ -32,12 +32,12 @@ export function terminalHtml(sessions) {
 <style>
   :root { --bg: #0d1117; --fg: #d6dde6; --dim: #7d8794; --ok: #4fd18b; --warn: #f2b84b; --bad: #ff6b6b; }
   html, body { margin: 0; height: 100%; background: #e9e4da; }
-  body { display: grid; place-items: center; font: 22px/1.5 'JetBrains Mono', ui-monospace, monospace; }
+  body { display: grid; place-items: center; font: 30px/1.5 'JetBrains Mono', ui-monospace, monospace; }
   .win { width: 1760px; height: 960px; background: var(--bg); border-radius: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; }
   .bar { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #161b22; color: var(--dim); font-size: 16px; }
   .bar i { width: 13px; height: 13px; border-radius: 50%; background: #ff5f57; } .bar i:nth-child(2) { background: #febc2e; } .bar i:nth-child(3) { background: #28c840; }
   .bar span { margin-left: 14px; }
-  .screen { flex: 1; padding: 22px 30px 150px; color: var(--fg); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; white-space: pre; }
+  .screen { flex: 1; padding: 34px 40px 150px; color: var(--fg); display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden; white-space: pre; }
   .prompt { color: var(--ok); } .cmd { color: #fff; white-space: pre-wrap; word-break: break-all; }
   .ok { color: var(--ok); } .warn { color: var(--warn); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
   .cursor { display: inline-block; width: .6em; background: var(--fg); animation: blink 1s steps(1) infinite; }

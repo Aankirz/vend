@@ -9,9 +9,10 @@ import { BUILD, DEMO, OUT, ROOT } from './lib.js'
 import { beats } from './narration.js'
 
 const VOICE = 'Samantha'
-const VOICE_RATE = 178
+const VOICE_RATE = 170
 const LEAD_S = 0.35
 const TAIL_S = 0.45
+const ZOOM_HOLD_S = 1 // let the zoomed build log sit on screen after each line
 const SLOT_S = 15
 const END_CARD_S = 4
 const MUSIC_VOLUME = 0.05
@@ -33,7 +34,7 @@ function speak(text, name) {
 }
 
 const CARD_CSS = `html,body{margin:0;width:1920px;height:1080px;font-family:'Space Grotesk','Inter',sans-serif}
-.cap{position:absolute;left:96px;bottom:92px;display:flex;align-items:center;gap:18px;padding:20px 30px 20px 24px;background:rgba(13,17,23,.92);color:#fff;border-radius:12px;font-size:40px;font-weight:600;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.cap{position:absolute;right:96px;top:84px;display:flex;align-items:center;gap:18px;padding:20px 30px 20px 24px;background:rgba(13,17,23,.92);color:#fff;border-radius:12px;font-size:40px;font-weight:600;box-shadow:0 18px 50px rgba(0,0,0,.35)}
 .cap i{width:8px;height:44px;border-radius:4px;background:#5b5bf0}
 .card{width:100%;height:100%;display:grid;place-content:center;text-align:center;background:#f4f1ea;color:#14161a}
 .card h1{font-size:96px;margin:0 0 18px}.card p{font:28px/1.4 'JetBrains Mono',monospace;color:#5b5f66;margin:0}`
@@ -48,12 +49,21 @@ async function still(browser, html, file, transparent) {
   return file
 }
 
+// A 16:9 window around the build log, so its lines fill the frame.
+function zoomCrop(box) {
+  const w = Math.round(Math.min(1920, Math.max(box.w + 360, 900)) / 2) * 2
+  const h = Math.round((w * 9) / 16 / 2) * 2
+  const x = Math.round(Math.min(Math.max(box.x + box.w / 2 - w / 2, 0), 1920 - w))
+  const y = Math.round(Math.min(Math.max(box.y - 24, 0), 1080 - h))
+  return `crop=${w}:${h}:${x}:${y},scale=1920:1080:flags=lanczos,`
+}
+
 // One beat → one clip: the source stretch is retimed to exactly the length of its line.
 function renderBeat(beat, i, wav, caption) {
-  const length = LEAD_S + duration(wav) + TAIL_S
+  const length = LEAD_S + duration(wav) + TAIL_S + (beat.zoom && beat.src === 'build' ? ZOOM_HOLD_S : 0)
   const factor = length / Math.max(beat.to - beat.from, 0.1)
   const inputs = ['-ss', beat.from.toFixed(3), '-to', beat.to.toFixed(3), '-i', path.join(BUILD, `${beat.src}.webm`), '-i', wav]
-  let graph = `[0:v]setpts=(PTS-STARTPTS)*${factor.toFixed(4)},tpad=stop_mode=clone:stop_duration=2,fps=30,scale=1920:1080,setsar=1[v0];`
+  let graph = `[0:v]setpts=(PTS-STARTPTS)*${factor.toFixed(4)},tpad=stop_mode=clone:stop_duration=2,fps=30,scale=1920:1080,${beat.zoom ? zoomCrop(beat.zoom) : ''}setsar=1[v0];`
   if (caption) {
     inputs.push('-loop', '1', '-t', length.toFixed(3), '-i', caption)
     graph += `[2:v]format=rgba,fade=in:st=0.2:d=0.3:alpha=1[c];[v0][c]overlay=0:0[v1];`
@@ -84,7 +94,9 @@ function concat(names, out) {
   const joined = path.join(CLIPS, `joined-${path.basename(out)}`)
   ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', joined])
   if (!fs.existsSync(MUSIC)) return fs.renameSync(joined, out)
-  ff(['-i', joined, '-stream_loop', '-1', '-i', MUSIC, '-filter_complex', `[1:a]volume=${MUSIC_VOLUME},aresample=48000[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`, '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out])
+  // Trim to the video stream so no audio-only tail renders as black frames.
+  const videoLength = execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=duration', '-of', 'csv=p=0', joined], { encoding: 'utf8' }).trim()
+  ff(['-i', joined, '-t', videoLength, '-stream_loop', '-1', '-i', MUSIC, '-filter_complex', `[1:a]volume=${MUSIC_VOLUME},aresample=48000[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`, '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out])
   fs.rmSync(joined)
   console.log(`${path.relative(DEMO, out)}: ${duration(out).toFixed(1)} s, ${(fs.statSync(out).size / 1e6).toFixed(1)} MB`)
 }

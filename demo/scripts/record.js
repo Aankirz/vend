@@ -59,7 +59,7 @@ async function build(page, t, base) {
   const click = t()
   await page.click('#submit')
   // /sell replays the previous build on load; only follow lines once this submission is building.
-  await page.waitForFunction(() => document.querySelector('#build-status').textContent === 'building', null, { timeout: 30_000 })
+  await page.waitForFunction(() => document.querySelector('#build-status').textContent.startsWith('building'), null, { timeout: 30_000 })
   const lines = []
   const deadline = Date.now() + BUILD_TIMEOUT_MS
   while (Date.now() < deadline) {
@@ -71,8 +71,9 @@ async function build(page, t, base) {
   }
   await sleep(3500)
   const status = await page.textContent('#build-status')
+  const logBox = await page.$eval('#log', (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } })
   const path_ = lines.map((l) => l.text.match(/live at \S*?(\/t\/[\w-]+)/)?.[1]).find(Boolean)
-  return { loaded, click, lines, status, toolUrl: path_ ? base + path_ : null, end: t() }
+  return { loaded, click, lines, status, logBox, toolUrl: path_ ? base + path_ : null, end: t() }
 }
 
 // Runs the real buyer script while /sell is on screen; stdout lines get timestamps on the same clock.
@@ -129,6 +130,42 @@ async function replay(page, t, base) {
   return { loaded, stages, end: t() }
 }
 
+// Hero buttons: "Try a paid call" then "Try a malicious call", with /sell filmed alongside on the same clock.
+const TRY_COOLDOWN_MS = 11_000 // /api/try allows one call per IP per 10 s
+async function tryOnce(page, t, button, done) {
+  const steps = []
+  const click = t()
+  await page.click(button)
+  const deadline = Date.now() + 45_000
+  while (Date.now() < deadline) {
+    const labels = await page.$$eval('#hero-try .try-step', (els) => els.map((e) => `${e.dataset.kind}: ${e.textContent}`))
+    for (const text of labels.slice(steps.length)) steps.push({ t: t(), text })
+    if (await page.$(done)) break
+    await sleep(150)
+  }
+  return { click, steps, shown: t() }
+}
+
+async function tryButtons(browser, base) {
+  const t0 = Date.now() // before the contexts exist, so marks line up with the video start
+  const t = () => (Date.now() - t0) / 1000
+  const contexts = await Promise.all(['try', 'try-sell'].map(() => browser.newContext({ viewport: SIZE, recordVideo: { dir: fs.mkdtempSync(path.join(BUILD, 'rec-')), size: SIZE } })))
+  const [hero, sell] = await Promise.all(contexts.map((c) => c.newPage()))
+  await Promise.all([hero.goto(base, { waitUntil: 'load' }), sell.goto(`${base}/sell`, { waitUntil: 'load' })])
+  await sleep(2500)
+  const paid = await tryOnce(hero, t, '#try-paid', '#hero-try .try-img, #hero-try [data-kind=ok], #hero-try [data-kind=failed]')
+  await sleep(TRY_COOLDOWN_MS)
+  const evil = await tryOnce(hero, t, '#try-evil', '#hero-try .is-blocked, #hero-try [data-kind=failed]')
+  await sleep(4000)
+  const marks = { paid, evil, videoOffset: 0, end: t() }
+  for (const c of contexts) await c.close()
+  for (const [name, page] of [['try', hero], ['try-sell', sell]]) {
+    await page.video().saveAs(path.join(BUILD, `${name}.webm`))
+    save(name, marks)
+  }
+  console.log('recorded try', JSON.stringify(marks, null, 1))
+}
+
 const buy = (page, t, base) => sellWithBuyer(page, t, base, REVENUE, () => document.querySelector('#calls .badge')?.textContent.includes('✓ paid'))
 const evil = (page, t, base) => sellWithBuyer(page, t, base, EVIL, () => /BLOCKED · refunded/.test(document.querySelector('#calls .badge')?.textContent || ''))
 
@@ -142,8 +179,8 @@ function capture(shown, cmd) {
 const TERMINALS = {
   projects: () => [capture('stripe projects status', 'stripe projects status')],
   stripe: () => {
-    const pis = "stripe payment_intents list --limit 3 --api-key \"$STRIPE_SECRET_KEY\" | jq -c '.data[] | {id, amount, currency, status}'"
-    const refunds = "stripe refunds list --limit 1 --api-key \"$STRIPE_SECRET_KEY\" | jq -c '.data[] | {id, amount, payment_intent, status}'"
+    const pis = "stripe payment_intents list --limit 3 --api-key \"$STRIPE_SECRET_KEY\" | jq -c '.data[] | {id, amount, status}'"
+    const refunds = "stripe refunds list --limit 1 --api-key \"$STRIPE_SECRET_KEY\" | jq -c '.data[] | {id, amount, status}'"
     return [capture(pis, pis), capture(refunds, refunds)]
   },
   buy: () => [load('buy')],
@@ -178,7 +215,8 @@ fs.mkdirSync(BUILD, { recursive: true })
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--window-size=1920,1080', '--screen-info={1920x1200}'] })
 try {
   for (const name of names) {
-    if (SEGMENTS[name]) await record(browser, name, (p, t) => SEGMENTS[name](p, t, base.replace(/\/$/, '')))
+    if (name === 'try') await tryButtons(browser, base.replace(/\/$/, ''))
+    else if (SEGMENTS[name]) await record(browser, name, (p, t) => SEGMENTS[name](p, t, base.replace(/\/$/, '')))
     else if (TERMINALS[name.replace(/^term-/, '')]) {
       const sessions = TERMINALS[name.replace(/^term-/, '')]()
       await record(browser, name.startsWith('term-') ? name : `term-${name}`, (p, t) => terminal(p, t, sessions))
