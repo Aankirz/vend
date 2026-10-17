@@ -97,3 +97,6 @@
 
 ## 2026-10-18 — Phase 6 demo video pipeline
 - Added demo/: Playwright recorder, terminal replay, narration EDL, ffmpeg renderer, owner-slot swap (`npm --prefix demo run final`); gitignored renders and owner clips.
+
+## 2026-10-18 — fix: serve hairline from public/lib
+- CreateOS uploader drops folders named vendor; moved public/vendor/hairline.js to public/lib/ and updated the import in home.js.

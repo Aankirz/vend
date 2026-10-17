@@ -62,7 +62,7 @@ const io = new IntersectionObserver(async (entries) => {
       figures.delete(target)
       continue
     }
-    hairline ||= import('/vendor/hairline.js')
+    hairline ||= import('/lib/hairline.js')
     const mod = await hairline
     if (!figures.has(target)) figures.set(target, mod[target.dataset.fig](target, { play: !reducedMotion(), intensity: 0.6, label: target.dataset.label }))
   }
