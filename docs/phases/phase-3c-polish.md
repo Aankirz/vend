@@ -36,3 +36,9 @@ The owner looked at the live site: "the design looks really naive." Redesign `/`
 - Keep it fast (inline SVG, no image generation services, no new deps), light + dark, 375px works, all existing behaviour and the Try-it buttons from Add-on 2.
 - More inspiration if useful: supahero.io (hero sections), cta.gallery, navbar.gallery, 60fps.design (interaction details).
 New deadline for this phase: **push by 04:50 IST** — ship the hero + steps redesign first, then /sell, then the rest.
+
+## Add-on 4 (coordinator) — style reference: https://colorfigures.vercel.app/ (April Zhu)
+Hand-inked isometric figures you can play with (← → switches figures). **This is the illustration style to match** — ink line weight, flat fills with a few spot colors, slight hand wobble, labelled "Fig. 0X" captions, interactive. It has a **vending machine (Fig. 03)** — Vend's metaphor.
+- Make Vend's hero centrepiece **our own hand-drawn isometric vending machine** in that spirit: the slots are tools ("chart · $0.50"), an AI agent drops a coin (402 → pay), a padlocked sandbox cube sits inside/behind it (CreateOS, network locked), the Stripe-style receipt prints out, the chart drops into the tray. Hover/click to make it vend (coin drop → item drops); respect reduced motion.
+- **Draw it yourself in SVG. Do not copy, trace or hotlink their artwork or code** — it's someone else's work; reference the style only. Add "Illustration style inspired by Colorfigures by April Zhu" in the footer.
+- The 3-step icons ("Fig. 01 Paste", "Fig. 02 Verify", "Fig. 03 Get paid") use the same ink style and "Fig." caption convention.
