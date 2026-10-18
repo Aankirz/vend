@@ -34,5 +34,5 @@ Before recording: open `/sell` at 1440×900, have the admin token ready (`grep V
 - [ ] Record + upload video (YouTube unlisted / Loom); paste link here and in README.
 - [x] Post on X (done). LinkedIn: only when the owner says so.
 - [x] Leaderboard: submitted as "vend" (code createos-2026, stack https://projects.dev/s#v1:createos~project). Vote link: https://projects.dev/vote/vend
-- [ ] Submission form (link in Discord #announcements): team details, repo, live URL, video, post link.
+- [ ] Submission form: **closed** when checked at 07:48 IST (deadline 06:00), not submitted. Ask organizers in Discord about a late entry.
 - [ ] After the hackathon: roll the Stripe test key (it was pasted in chat once).
