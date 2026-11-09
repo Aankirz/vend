@@ -106,3 +106,6 @@
 
 ## 2026-10-18 — Demo cut 2 per coordinator review
 - Re-recorded on redesign; Try buttons for buyer/BLOCKED; zoomed build log; larger terminal text; captions top-right; trim to video length.
+
+## 2026-10-18 — Submission form closed
+- Noted in docs/SUBMISSION.md that the form stopped accepting responses before submission.

@@ -147,13 +147,6 @@ vite.config.ts.timestamp-*
 
 # Stripe Projects secrets
 
-.projects/cache
-.projects/vault
-.projects/state.test.json
-.projects/state.local.test.json
-.env
-.env.*
-!.env.example
 
 # Vend runtime data (tools registry, events log)
 data/
@@ -209,3 +202,11 @@ demo/owner/*
 !demo/owner/.gitkeep
 demo/build/
 demo/node_modules/
+
+.projects/cache
+.projects/vault
+.projects/state.test.json
+.projects/state.local.test.json
+.env
+.env.*
+!.env.example
